@@ -13,11 +13,11 @@ def cmd_line_args():
     ap.add_argument('-f', '--format', default='guess',
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. Be specific if the file is not recognized automatically. Default: %(default)s")
-    ap.add_argument('--max_clade_size', type=float, default=0.5,
+    ap.add_argument('--max_clade_size', type=float, default=0.5, metavar='float',
                     help='Stop sampling triples when the largest subclade is this fraction of the number of taxa.')
-    ap.add_argument('--max_n_attempts', type=int, default=100,
+    ap.add_argument('--max_n_attempts', type=int, default=100, metavar='int',
                     help='Make at most this many attempts. Only applies when using --random.')
-    ap.add_argument('--base_case_size', default=100, type=int,
+    ap.add_argument('--base_case_size', default=100, type=int, metavar='int',
                     help='Just run NJ when a subproblem has less than this many taxa. Default: %(default)s')
     ap.add_argument('--verbose', action='store_true',
                     help='Output progress information')
