@@ -25,7 +25,10 @@ def divide_n_conquer_tree(msa, max_n_attempts=100, max_clade_size=0.5, base_case
 
     dm = PartialDistanceMatrix(msa)                 # We will gradually add distances to this "matrix"
 
-    return dnc_tree(dm, msa.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
+    t = dnc_tree(dm, msa.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
+    if verbose:
+        dm._print_computational_savings()
+    return t
 
 
 def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=False):
@@ -45,7 +48,7 @@ def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_tri
         v = dm.create_central_vertex(t, c)
         if verbose:
             print(f'Recursing on subproblems induced by {t[0]}, {t[1]}, and {t[2]}', file=sys.stderr)
-            print(f'   Central vertex: {v}', file=sys.stderr)
+#            print(f'   Central vertex: {v}', file=sys.stderr)
 
         # Recurse on cx+tx+v, for x in {1,2,3}.
         subtrees = [None, None, None]
@@ -188,7 +191,7 @@ def dnc_neighborjoining(dm, taxa, verbose):
     verbose:  boolean, whether to print extra info to stderr
     '''
     if verbose:
-        print(f'Base case: {taxa}', file=sys.stderr)
+        print(f'Full NJ on: {taxa}', file=sys.stderr)
 
     t = Tree()
     if len(taxa) == 1:
