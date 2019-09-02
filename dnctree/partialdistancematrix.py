@@ -1,4 +1,5 @@
 import math
+import sys
 
 class PartialDistanceMatrix:
     def __init__(self, msa, model='poisson'):
@@ -10,10 +11,12 @@ class PartialDistanceMatrix:
         The model parameter decides how to estimate distances.
         '''
         self.msa = msa
+        self.taxa = list(msa.taxa())
         self._dm = dict()
         self._internal_vertex_counter = 0
         for t in msa.taxa():
             self._dm[t] = dict()
+        self._n_distances_computed = 0
 
     def get(self, t1, t2):
         '''
@@ -118,4 +121,12 @@ class PartialDistanceMatrix:
             return 2.5
 
         distance = - math.log(1 - n_diffs/n_chars)
+        self._n_distances_computed += 1
         return distance
+
+
+    def _print_computational_savings(self):
+        n = len(self.taxa)
+        normal_work = int(n * (n-1) / 2) # Full distance matrix
+        actual_work = self._n_distances_computed
+        print(f'Computed {actual_work} distances for {n} taxa. A distance matrix contains {normal_work} pairs. Savings: {100 - 100 * actual_work/normal_work} %', file=sys.stderr)
