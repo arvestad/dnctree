@@ -1,5 +1,6 @@
 import argparse
 import sys
+import traceback
 
 from alv.io import guess_format, read_alignment
 from dnctree import divide_n_conquer_tree
@@ -13,17 +14,20 @@ def cmd_line_args():
     ap.add_argument('-f', '--format', default='guess',
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. Be specific if the file is not recognized automatically. Default: %(default)s")
-    ap.add_argument('--max_clade_size', type=float, default=0.5, metavar='float',
-                    help='Stop sampling triples when the largest subclade is this fraction of the number of taxa.')
-    ap.add_argument('--max_n_attempts', type=int, default=100, metavar='int',
-                    help='Make at most this many attempts. Only applies when using --random.')
-    ap.add_argument('--base_case_size', default=100, type=int, metavar='int',
-                    help='Just run NJ when a subproblem has less than this many taxa. Default: %(default)s')
+
     ap.add_argument('--verbose', action='store_true',
                     help='Output progress information')
 
-    ap.add_argument('--first_triple', nargs=3, metavar='taxa',
-                    help='Give three taxa to induce first subproblems.')
+    group = ap.add_argument_group('Export options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
+    group.add_argument('--max_clade_size', type=float, default=0.5, metavar='float',
+                       help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
+    group.add_argument('--max_n_attempts', type=int, default=100, metavar='int',
+                       help='Make at most this many attempts. Default: %(default)s')
+    group.add_argument('--base_case_size', default=100, type=int, metavar='int',
+                       help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
+
+    group.add_argument('--first_triple', nargs=3, metavar='taxa',
+                       help='Give three taxa to induce first subproblems.')
 
     args = ap.parse_args()
     return args
@@ -39,7 +43,7 @@ def main():
             inputformat = args.format
         alv_msa, x = read_alignment(args.infile, args.seqtype, inputformat, None, None)
     except Exception as e:
-        print('Error in dnctree:', e, file=sys.stderr)
+        print('Error when reading data in dnctree:', e, file=sys.stderr)
         sys.exit(1)
 
     msa = MSA(alv_msa)
@@ -48,6 +52,6 @@ def main():
         t = divide_n_conquer_tree(msa, args.max_n_attempts, args.max_clade_size, args.base_case_size, args.first_triple, args.verbose)
         print(t)
     except Exception as e:
-        print('Error in dnctree', file=sys.stderr)
-        print(e, file=sys.stderr)
+        print(traceback.format_exc())
+        print('Error in dnctree:', e, file=sys.stderr)
         sys.exit(2)
