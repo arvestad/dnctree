@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from alv.io import read_alignment
+from alv.io import guess_format, read_alignment
 from dnctree import divide_n_conquer_tree
 from dnctree.msa import MSA
 
@@ -31,8 +31,23 @@ def cmd_line_args():
 
 def main():
     args = cmd_line_args()
-    alv_msa, x = read_alignment(args.infile, args.seqtype, args.format, None, None)
+
+    try:
+        if args.format == 'guess':
+            inputformat = guess_format(args.infile)
+        else:
+            inputformat = args.format
+        alv_msa, x = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+    except Exception as e:
+        print('Error in dnctree:', e, file=sys.stderr)
+        sys.exit(1)
+
     msa = MSA(alv_msa)
 
-    t = divide_n_conquer_tree(msa, args.max_n_attempts, args.max_clade_size, args.base_case_size, args.first_triple, args.verbose)
-    print(t)
+    try:
+        t = divide_n_conquer_tree(msa, args.max_n_attempts, args.max_clade_size, args.base_case_size, args.first_triple, args.verbose)
+        print(t)
+    except Exception as e:
+        print('Error in dnctree', file=sys.stderr)
+        print(e, file=sys.stderr)
+        sys.exit(2)
