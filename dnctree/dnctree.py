@@ -33,14 +33,18 @@ def divide_n_conquer_tree(msa, max_n_attempts=100, max_clade_size=0.5, base_case
 
 def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=False):
     if len(taxa) <= base_case_size:
+        if verbose:
+            print(f'Full NJ on: {taxa}', end='  ', file=sys.stderr, flush=True)
         t = dnc_neighborjoining(dm, taxa, verbose)
+        if verbose:
+            print('Subproblem completed', file=sys.stderr, flush=True)
         return t
     else:
         if first_triple is not None:
             t = first_triple
             c = clade_sort_taxa(dm, taxa, t[0], t[1], t[2])
         else:
-            t, c = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size)
+            t, c = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose)
         # t[i] are 3 taxa ids
         # c[i] are three lists of taxa representing what we think should be become a clade (c[i] together with t[i]).
 
@@ -55,12 +59,14 @@ def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_tri
         for i in range(3):
             c[i].append(v)      # Ensure that the central vertex participates as a representative of the other clades
             subtrees[i] = dnc_tree(dm, c[i], max_n_attempts, max_clade_size, base_case_size, None, verbose)
+            if verbose:
+                dm.print_progress()
 #            print(f't{i}:', subtrees[i], file=sys.stderr)
         t_connected = connect_the_trees(subtrees, v)
         return t_connected
 
 
-def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size):
+def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose):
     '''
     Sample three taxa and see if they split the set of taxa not too unevenly. Repeat until the largest
     clade (out of three) is small enough or we have used our max number of attempts.
@@ -77,9 +83,12 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size):
     smallest_large_clade_so_far = len(taxa) # Initialize with worst possible subproblem size
     for i in range(max_n_attempts):
         t1, t2, t3 = random.sample(taxa, 3) # Three taxa strings
+        if verbose:
+            print(f'Attempt: {t1}, {t2}, {t3}.', end='  ', file=sys.stderr)
         c1, c2, c3 = clade_sort_taxa(dm, taxa, t1, t2, t3) # Three groups of taxa: "clade wannabees"
         largest = max(len(c1), len(c2), len(c3)) # Out of the three found clades, which one is largest?
-        print(f'Attempt: {t1}, {t2}, {t3}, with clade sizes {len(c1)}, {len(c2)}, and {len(c3)}', file=sys.stderr)
+        if verbose:
+            print(f'Clade sizes: {len(c1)}, {len(c2)}, and {len(c3)}', file=sys.stderr)
 
         if largest <= N:
             # Sample is good, so let's use it
@@ -171,14 +180,13 @@ def nj_selection_function(dm, current_leaves):
 
     n_minus_2 = len(current_leaves) - 2
     Q_ij_min = n_minus_2 * dm.get(current_leaves[0], current_leaves[1]) # Arbitrary but safe starting value that won't be chosen.
-    best_so_far = None
+    best_so_far = current_leaves[0], current_leaves[1]
     for x, y in itertools.combinations(current_leaves, 2):
         Q_ij = n_minus_2 * dm.get(x, y) - sum_distances(x) - sum_distances(y)
         if Q_ij < Q_ij_min:
             Q_ij_min = Q_ij
             best_so_far = x, y
 
-    assert best_so_far is not None
     return best_so_far
 
 
@@ -190,9 +198,6 @@ def dnc_neighborjoining(dm, taxa, verbose):
     taxa:     a list of identifiers (part of dm) to infer the tree for
     verbose:  boolean, whether to print extra info to stderr
     '''
-    if verbose:
-        print(f'Full NJ on: {taxa}', file=sys.stderr)
-
     t = Tree()
     if len(taxa) == 1:
         t.add_vertex(taxa[0])
