@@ -47,11 +47,13 @@ def main():
         sys.exit(1)
 
     msa = MSA(alv_msa)
+    if args.verbose:
+        n = len(msa.taxa())
+        print(f'Input MSA has {n} taxa.', file=sys.stderr)
 
     try:
         t = divide_n_conquer_tree(msa, args.max_n_attempts, args.max_clade_size, args.base_case_size, args.first_triple, args.verbose)
         print(t)
     except Exception as e:
-        print(traceback.format_exc())
         print('Error in dnctree:', e, file=sys.stderr)
         sys.exit(2)
