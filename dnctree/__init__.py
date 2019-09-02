@@ -1,0 +1,1 @@
+from dnctree.dnctree import divide_n_conquer_tree
