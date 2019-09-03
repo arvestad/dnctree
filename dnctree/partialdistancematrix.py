@@ -2,7 +2,7 @@ import math
 import sys
 
 class PartialDistanceMatrix:
-    def __init__(self, msa, model='poisson'):
+    def __init__(self, msa, model='poisson', verbose=False):
         '''
         The constructor initializes the distance matrix as a dict with dicts so that
         we can have distances as self.dm[t1][t2] elements. If no distance has been estimated to
@@ -19,6 +19,7 @@ class PartialDistanceMatrix:
         for t in msa.taxa():
             self._dm[t] = dict()
         self._n_distances_computed = 0
+        self.verbose = verbose
 
     def get(self, t1, t2):
         '''
@@ -114,12 +115,12 @@ class PartialDistanceMatrix:
             n_chars += 1
 
         if n_chars == 0:
-#            raise Exception(f'No shared characters between {t1} and {t2}, so cannot estimate their distance.')
-            print(f'Warning: No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to distance=2.5.', file=sys.stderr)
+            if 'supress_warnings' not in self.verbose:
+                print(f'Warning: No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to distance=2.5.', file=sys.stderr)
             return 2.5
         if n_diffs == n_chars:
-#            raise Exception(f'Degenerate sequence pair: {t1} and {t2}. All shared characters are different.')
-            print(f'Warning: Degenerate sequence pair: {t1} and {t2}. All shared characters are different. Defaulting to distance=2.5.', file=sys.stderr)
+            if 'supress_warnings' not in self.verbose:
+                print(f'Warning: Degenerate sequence pair: {t1} and {t2}. All shared characters are different. Defaulting to distance=2.5.', file=sys.stderr)
             return 2.5
 
         distance = - math.log(1 - n_diffs/n_chars)
@@ -134,7 +135,11 @@ class PartialDistanceMatrix:
         print(f'Computed {actual_work} distances for {n} taxa. A full distance matrix would contain {normal_work} pairs. Savings: {100 - 100 * actual_work/normal_work:.3} %', file=sys.stderr)
 
     def print_progress(self):
+        '''
+        Based on how many internal nodes we have defined, we can estimate how much of the final tree we have reconstructed.
+        This function writes a simple statement about problem completion based on that.
+        '''
         if self._internal_vertex_counter > self._last_progress: # Avoid redundant progress information
             self._last_progress = self._internal_vertex_counter
             progress = 100 * self._internal_vertex_counter / (self.n_taxa - 2)
-            print(f'Progress: {progress:.4} %', file=sys.stderr, flush=True)
+            print(f'Completion: {progress:.1f} %', file=sys.stderr, flush=True)
