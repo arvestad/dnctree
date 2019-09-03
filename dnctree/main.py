@@ -18,6 +18,9 @@ def cmd_line_args():
     ap.add_argument('--verbose', action='store_true',
                     help='Output progress information')
 
+    ap.add_argument('-w', '--supress_warnings', action='store_true',
+                    help='Do not warn about sequence pairs not sharing columns or sequences being completely different.')
+
     group = ap.add_argument_group('Export options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
     group.add_argument('--max_clade_size', type=float, default=0.5, metavar='float',
                        help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
@@ -42,18 +45,27 @@ def main():
         else:
             inputformat = args.format
         alv_msa, x = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+    except KeyboardInterrupt:
+        sys.exit()
     except Exception as e:
         print('Error when reading data in dnctree:', e, file=sys.stderr)
         sys.exit(1)
 
+    verbosity = []
     msa = MSA(alv_msa)
     if args.verbose:
         n = len(msa.taxa())
         print(f'Input MSA has {n} taxa.', file=sys.stderr)
 
+        verbosity.append('verbose')
+        if args.supress_warnings:
+            verbosity.append('supress_warnings')
+
     try:
-        t = divide_n_conquer_tree(msa, args.max_n_attempts, args.max_clade_size, args.base_case_size, args.first_triple, args.verbose)
+        t = divide_n_conquer_tree(msa, args.max_n_attempts, args.max_clade_size, args.base_case_size, args.first_triple, verbosity)
         print(t)
+    except KeyboardInterrupt:
+        sys.exit()
     except Exception as e:
         print('Error in dnctree:', e, file=sys.stderr)
         sys.exit(2)
