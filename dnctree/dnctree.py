@@ -23,7 +23,7 @@ def divide_n_conquer_tree(msa, max_n_attempts=100, max_clade_size=0.5, base_case
     assert max_clade_size >= 0.5  # Pointless to try smaller values
     assert max_n_attempts >= 1    # Truly a minimum
 
-    dm = PartialDistanceMatrix(msa)                 # We will gradually add distances to this "matrix"
+    dm = PartialDistanceMatrix(msa, verbose=verbose)                 # We will gradually add distances to this "matrix"
 
     t = dnc_tree(dm, msa.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
     if verbose:
@@ -84,11 +84,11 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose):
     for i in range(max_n_attempts):
         t1, t2, t3 = random.sample(taxa, 3) # Three taxa strings
         if verbose:
-            print(f'Attempt: {t1}, {t2}, {t3}.', end='  ', file=sys.stderr)
+            print(f'Attempt: {t1}, {t2}, {t3}.', end='  ', file=sys.stderr, flush=True)
         c1, c2, c3 = clade_sort_taxa(dm, taxa, t1, t2, t3) # Three groups of taxa: "clade wannabees"
         largest = max(len(c1), len(c2), len(c3)) # Out of the three found clades, which one is largest?
         if verbose:
-            print(f'Clade sizes: {len(c1)}, {len(c2)}, and {len(c3)}', file=sys.stderr)
+            print(f'Clade sizes: {len(c1)}, {len(c2)}, and {len(c3)}', file=sys.stderr, flush=True)
 
         if largest <= N:
             # Sample is good, so let's use it
