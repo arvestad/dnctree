@@ -1,6 +1,7 @@
 import itertools
 import random
 import sys
+import textwrap
 
 from dnctree.tree import Tree
 
@@ -34,10 +35,9 @@ def divide_n_conquer_tree(msa, max_n_attempts=100, max_clade_size=0.5, base_case
 def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=False):
     if len(taxa) <= base_case_size:
         if verbose:
-            print(f'Full NJ on: {taxa}', end='  ', file=sys.stderr, flush=True)
+            print(f'Full NJ on {len(taxa)} taxa:', file=sys.stderr, flush=True)
+            print(_taxa_string_helper(taxa, 2), file=sys.stderr, flush=True)
         t = dnc_neighborjoining(dm, taxa, verbose)
-        if verbose:
-            print('Subproblem completed', file=sys.stderr, flush=True)
         return t
     else:
         if first_triple is not None:
@@ -224,5 +224,10 @@ def dnc_neighborjoining(dm, taxa, verbose):
             t.set_start_node(c)
             return t
 
+def _taxa_string_helper(l, indent):
+    s = textwrap.fill(', '.join(l), width=100 - indent)
+    return textwrap.indent(s, ' ' * indent)
+
 def test_nj():
     dm = PartialDistanceMatrix()
+
