@@ -1,18 +1,57 @@
 import math
 import sys
 
+def poisson_distance(t1, t2, s1, s2, supress_warnings=False):
+    '''
+    Default method for distance estimation in PartialDistanceMatrix.get().
+
+    A better alternative, with the same signature, should be provided
+    when instantiating PartialDistanceMatrix.
+    '''
+    n_chars = 0
+    n_diffs = 0
+    for c1, c2 in zip(s1, s2):
+        if c1=='-' or c2=='-':
+            continue
+        if c1 != c2:
+            n_diffs += 1
+        n_chars += 1
+
+    if n_chars == 0:
+        if supress_warnings:
+            print(f'Warning: No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to distance=2.5.', file=sys.stderr)
+        return 2.5
+    if n_diffs == n_chars:
+        if supress_warnings:
+            print(f'Warning: Degenerate sequence pair: {t1} and {t2}. All shared characters are different. Defaulting to distance=2.5.', file=sys.stderr)
+        return 2.5
+
+    distance = - math.log(1 - n_diffs/n_chars)
+    return distance
+
+
 class PartialDistanceMatrix:
-    def __init__(self, msa, model='poisson', verbose=False):
+    '''
+    Represent distance matrices using a dictionary instead of a full (half) square matrix, 
+    because we are not going to compute all pairwise distances. 
+
+    This class pretends it is a distance matrix. Distances are computed on-demand, when
+    they are asked for.
+    '''
+    def __init__(self, msa, verbose=False, distance_estimator=poisson_distance):
         '''
         The constructor initializes the distance matrix as a dict with dicts so that
         we can have distances as self.dm[t1][t2] elements. If no distance has been estimated to
         or from tx, then self.dm[tx] is empty.
 
-        The model parameter decides how to estimate distances.
+        The "distance_estimator" is a function.
         '''
         self.msa = msa
         self.taxa = list(msa.taxa())
         self.n_taxa = len(self.taxa)
+
+        self._distance_function = distance_estimator
+        
         self._dm = dict()
         self._internal_vertex_counter = 0
         self._last_progress = 0
@@ -105,25 +144,9 @@ class PartialDistanceMatrix:
         '''
         s1 = self.msa[t1].seq
         s2 = self.msa[t2].seq
-        n_chars = 0
-        n_diffs = 0
-        for c1, c2 in zip(s1, s2):
-            if c1=='-' or c2=='-':
-                continue
-            if c1 != c2:
-                n_diffs += 1
-            n_chars += 1
 
-        if n_chars == 0:
-            if 'supress_warnings' not in self.verbose:
-                print(f'Warning: No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to distance=2.5.', file=sys.stderr)
-            return 2.5
-        if n_diffs == n_chars:
-            if 'supress_warnings' not in self.verbose:
-                print(f'Warning: Degenerate sequence pair: {t1} and {t2}. All shared characters are different. Defaulting to distance=2.5.', file=sys.stderr)
-            return 2.5
-
-        distance = - math.log(1 - n_diffs/n_chars)
+        supress_warnings = 'supress_warnings'  in self.verbose
+        distance = self._distance_function(t1, t2, s1, s2, supress_warnings)
         self._n_distances_computed += 1
         return distance
 
@@ -143,3 +166,5 @@ class PartialDistanceMatrix:
             self._last_progress = self._internal_vertex_counter
             progress = 100 * self._internal_vertex_counter / (self.n_taxa - 2)
             print(f'Completion: {progress:.1f} %', file=sys.stderr, flush=True)
+
+
