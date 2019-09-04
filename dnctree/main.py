@@ -37,9 +37,8 @@ def cmd_line_args():
 
 
 def main():
-    args = cmd_line_args()
-
     try:
+        args = cmd_line_args()
         if args.format == 'guess':
             inputformat = guess_format(args.infile)
         else:
