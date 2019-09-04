@@ -24,7 +24,7 @@ def cmd_line_args():
     group = ap.add_argument_group('Export options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
     group.add_argument('--max_clade_size', type=float, default=0.5, metavar='float',
                        help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
-    group.add_argument('--max_n_attempts', type=int, default=100, metavar='int',
+    group.add_argument('--max_n_attempts', type=int, default=10, metavar='int',
                        help='Make at most this many attempts. Default: %(default)s')
     group.add_argument('--base_case_size', default=100, type=int, metavar='int',
                        help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
