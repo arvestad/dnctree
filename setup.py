@@ -26,6 +26,7 @@ elif sys.version_info.minor < 2:
 
 requirements = [
     'alv',
+    'modelmatcher',
     'biopython>=1.70',
 ]
 
