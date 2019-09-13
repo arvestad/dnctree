@@ -155,7 +155,7 @@ class PartialDistanceMatrix:
         n = len(self.taxa)
         normal_work = int(n * (n-1) / 2) # Full distance matrix
         actual_work = self._n_distances_computed
-        print(f'Computed {actual_work} distances for {n} taxa. A full distance matrix would contain {normal_work} pairs. Savings: {100 - 100 * actual_work/normal_work:.3} %', file=sys.stderr)
+        print(f'[Computed {actual_work} distances for {n} taxa. A full distance matrix would contain {normal_work} pairs. Savings: {100 - 100 * actual_work/normal_work:.3} %]', file=sys.stderr)
 
     def print_progress(self):
         '''

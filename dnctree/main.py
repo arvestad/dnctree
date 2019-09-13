@@ -18,18 +18,18 @@ def cmd_line_args():
     ap.add_argument('--verbose', action='store_true',
                     help='Output progress information')
 
-    ap.add_argument('-w', '--supress_warnings', action='store_true',
+    ap.add_argument('-w', '--supress-warnings', action='store_true',
                     help='Do not warn about sequence pairs not sharing columns or sequences being completely different.')
 
     group = ap.add_argument_group('Export options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
-    group.add_argument('--max_clade_size', type=float, default=0.5, metavar='float',
+    group.add_argument('--max-clade-size', type=float, default=0.5, metavar='float',
                        help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
-    group.add_argument('--max_n_attempts', type=int, default=10, metavar='int',
+    group.add_argument('--max-n-attempts', type=int, default=10, metavar='int',
                        help='Make at most this many attempts. Default: %(default)s')
-    group.add_argument('--base_case_size', default=100, type=int, metavar='int',
+    group.add_argument('--base-case-size', default=100, type=int, metavar='int',
                        help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
 
-    group.add_argument('--first_triple', nargs=3, metavar='taxa',
+    group.add_argument('--first-triple', nargs=3, metavar='taxa',
                        help='Give three taxa to induce first subproblems.')
 
     args = ap.parse_args()

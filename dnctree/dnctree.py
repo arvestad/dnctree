@@ -52,7 +52,6 @@ def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_tri
         v = dm.create_central_vertex(t, c)
         if verbose:
             print(f'Recursing on subproblems induced by {t[0]}, {t[1]}, and {t[2]}', file=sys.stderr)
-#            print(f'   Central vertex: {v}', file=sys.stderr)
 
         # Recurse on cx+tx+v, for x in {1,2,3}.
         subtrees = [None, None, None]
