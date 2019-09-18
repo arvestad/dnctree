@@ -21,7 +21,7 @@ def cmd_line_args():
     ap.add_argument('-w', '--supress-warnings', action='store_true',
                     help='Do not warn about sequence pairs not sharing columns or sequences being completely different.')
 
-    group = ap.add_argument_group('Export options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
+    group = ap.add_argument_group('Expert options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
     group.add_argument('--max-clade-size', type=float, default=0.5, metavar='float',
                        help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
     group.add_argument('--max-n-attempts', type=int, default=10, metavar='int',
