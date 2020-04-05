@@ -26,7 +26,7 @@ elif sys.version_info.minor < 2:
 
 requirements = [
     'alv',
-    'modelmatcher',
+    'modelmatcher>=1.1.3',
     'biopython>=1.70',
 ]
 
@@ -35,7 +35,7 @@ setuptools.setup(
     version=__version__,
     author="Lars Arvestad",
     author_email="arve@math.su.se",
-    description="A console-based sequence alignment viewer",
+    description="Distance-based phylogeny inference using a randomised divide-and-conquer method",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/arvestad/dnctree",
