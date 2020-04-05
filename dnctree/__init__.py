@@ -1,1 +1,1 @@
-from dnctree.dnctree import divide_n_conquer_tree
+from dnctree.dnctree import divide_n_conquer_tree, choose_distance_function
