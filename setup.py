@@ -28,6 +28,7 @@ requirements = [
     'alv',
     'modelmatcher>=1.1.3',
     'biopython>=1.70',
+    'ete3>=3.1.1'
 ]
 
 setuptools.setup(
