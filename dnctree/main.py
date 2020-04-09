@@ -3,14 +3,22 @@ import sys
 import traceback
 
 from alv.io import guess_format, read_alignment
-from dnctree import divide_n_conquer_tree
+from dnctree import divide_n_conquer_tree, choose_distance_function
 from dnctree.msa import MSA
+from dnctree.algtesting import run_alg_testing
+
+aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
+aa_default_model = aa_models[0]
+dna_models =['JC', 'K2P']
+dna_default_model = dna_models[0]
 
 def cmd_line_args():
-    ap = argparse.ArgumentParser(description='Divide-and-conquer phylogenetic distance-based tree inference. Currently, the only implemented sequence evolution model is Poisson.')
+    ap = argparse.ArgumentParser(description='Divide-and-conquer phylogenetic distance-based tree inference.')
     ap.add_argument('infile', help='Multiple sequence alignment in a standard format (FASTA, Phylip, Nexus, Clustal, or Stockholm format).')
     ap.add_argument('-t', '--seqtype', default='guess', choices=['aa', 'dna', 'rna', 'guess'],
                     help='Set the sequence type to expect. The default is to guess the input type.')
+    ap.add_argument('-m', '--model', default='guess', choices=['guess', 'kimura'] + aa_models + dna_models,
+                    help=f'Choose one of the named models or let dnctree guess based on the sequence type. Default is {aa_default_model}.')
     ap.add_argument('-f', '--format', default='guess',
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. Be specific if the file is not recognized automatically. Default: %(default)s")
@@ -21,16 +29,20 @@ def cmd_line_args():
     ap.add_argument('-w', '--supress-warnings', action='store_true',
                     help='Do not warn about sequence pairs not sharing columns or sequences being completely different.')
 
-    group = ap.add_argument_group('Export options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
-    group.add_argument('--max-clade-size', type=float, default=0.5, metavar='float',
-                       help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
-    group.add_argument('--max-n-attempts', type=int, default=10, metavar='int',
-                       help='Make at most this many attempts. Default: %(default)s')
+    group = ap.add_argument_group('Expert options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
     group.add_argument('--base-case-size', default=100, type=int, metavar='int',
                        help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
-
+    group.add_argument('--max-n-attempts', type=int, default=1, metavar='int',
+                       help='Make at most this many attempts. Default: %(default)s')
+    group.add_argument('--max-clade-size', type=float, default=0.5, metavar='float',
+                       help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
     group.add_argument('--first-triple', nargs=3, metavar='taxa',
                        help='Give three taxa to induce first subproblems.')
+
+    group.add_argument('--alg-testing', type=float, default=0.1,
+                       help='Enables algorithm evaluation. The infile is read as model tree, defining distance, and the parameter to this option is the randomised error.')
+    group.add_argument('--alg-testing-nj', action='store_true',
+                       help='Compare with NJ. This option is dependent on --alg-testing.')
 
     args = ap.parse_args()
     return args
@@ -38,7 +50,7 @@ def cmd_line_args():
 
 def check_args(args):
     '''
-    Impose constraints on arguments. Some badly chosen parameters result in program exit, 
+    Impose constraints on arguments. Some badly chosen parameters result in program exit,
     others simply a correction to a valid parameter value.
     '''
 
@@ -61,29 +73,48 @@ def main():
         args = cmd_line_args()
         check_args(args)
 
+        if args.alg_testing:
+            run_alg_testing(args)
+            sys.exit()
+
         if args.format == 'guess':
             inputformat = guess_format(args.infile)
         else:
             inputformat = args.format
-        alv_msa, x = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+        alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+
     except KeyboardInterrupt:
         sys.exit()
     except Exception as e:
         print('Error when reading data in dnctree:', e, file=sys.stderr)
+        traceback.print_exc()
         sys.exit(1)
 
-    verbosity = []
-    msa = MSA(alv_msa)
-    if args.verbose:
-        n = len(msa.taxa())
-        print(f'Input MSA has {n} taxa.', file=sys.stderr)
-
-        verbosity.append('verbose')
+    try:
+        verbosity = []
+        if args.verbose:
+            verbosity.append('verbose')
         if args.supress_warnings:
             verbosity.append('supress_warnings')
 
+        msa = MSA(alv_msa)
+        if args.verbose:
+            n = len(msa.taxa())
+            print(f'Input MSA has {n} taxa.', file=sys.stderr)
+    except KeyboardInterrupt:
+        sys.exit()
+
     try:
-        t = divide_n_conquer_tree(msa, args.max_n_attempts, args.max_clade_size, args.base_case_size, args.first_triple, verbosity)
+        model_name = None
+        if args.model != 'guess':
+            model_name = args.model
+
+        t = divide_n_conquer_tree(msa, model_name=model_name,
+                                  max_n_attempts=args.max_n_attempts,
+                                  max_clade_size=args.max_clade_size,
+                                  base_case_size=args.base_case_size,
+                                  first_triple=args.first_triple,
+                                  verbose=verbosity)
         print(t)
     except AssertionError:
         sys.exit(f'A bug has occured. Please report an issue on http://github.com/arvestad/dnctree, and include sample data.')
@@ -91,4 +122,6 @@ def main():
         sys.exit()
     except Exception as e:
         print('Error in dnctree:', e, file=sys.stderr)
+        # import traceback
+        # traceback.print_exc()
         sys.exit(2)
