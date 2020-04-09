@@ -18,7 +18,7 @@ def kimura_distance(N):
     Note: written for protein alignments
     '''
     n_sum = np.sum(N)
-    changed_fraction = 1 -  np.sum(np.diag(N)) / n_sum
+    changed_fraction = 1 -  (np.sum(np.diag(N)) / n_sum)
     adjusted = changed_fraction + 0.2 * changed_fraction**2
     if adjusted > 0.854:    # "basically infinite"
         adjusted = 0.854    # Safe value for the logarithm
