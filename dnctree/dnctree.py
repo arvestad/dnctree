@@ -132,21 +132,21 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose):
     best_so_far = None
     smallest_large_clade_so_far = len(taxa) # Initialize with worst possible subproblem size
     for i in range(max_n_attempts):
-        t1, t2, t3 = random.sample(taxa, 3) # Three taxa strings
+        v1, v2, v3 = random.sample(taxa, 3) # Three taxa strings
         if verbose:
-            print(f'Attempt: {t1}, {t2}, {t3}.', end='  ', file=sys.stderr, flush=True)
-        c1, c2, c3 = clade_sort_taxa(dm, taxa, t1, t2, t3) # Three groups of taxa: "clade wannabees"
+            print(f'Attempt: {v1}, {v2}, {v3}.', end='  ', file=sys.stderr, flush=True)
+        c1, c2, c3 = clade_sort_taxa(dm, taxa, v1, v2, v3) # Three groups of taxa: "clade wannabees"
         largest = max(len(c1), len(c2), len(c3)) # Out of the three found clades, which one is largest?
         if verbose:
             print(f'Clade sizes: {len(c1)}, {len(c2)}, and {len(c3)}', file=sys.stderr, flush=True)
 
         if largest <= N:
             # Sample is good, so let's use it
-            return (t1, t2, t3), (c1, c2, c3)
+            return (v1, v2, v3), (c1, c2, c3)
         elif largest < smallest_large_clade_so_far:
             # Not an ideal sample, but better than what we have seen before, so save it.
             smallest_large_clade_so_far = largest
-            best_so_far = (t1, t2, t3), (c1, c2, c3)
+            best_so_far = (v1, v2, v3), (c1, c2, c3)
     assert best_so_far != None
     return best_so_far
 
