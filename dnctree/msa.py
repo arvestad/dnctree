@@ -1,8 +1,11 @@
 from Bio.Alphabet import ProteinAlphabet, AlphabetEncoder, Gapped
 from Bio.Align import MultipleSeqAlignment
+
 import alv.alignment
 import itertools as it
 import numpy as np
+
+import dnctree.exceptions as dnc
 
 class MSA:
     '''
@@ -48,6 +51,9 @@ class MSA:
             biopy_msa.add_sequence(acc, seq)
         return cls(alv.alignment.aaAlignment(biopy_msa))         # Instantiate
 
+    @classmethod
+    def from_biopython(cls, msa):
+        pass
 
     def taxa(self):
         return self._taxa
@@ -86,9 +92,18 @@ class MSA:
         else:
             raise Exception('dnctree currently only handles protein or DNA sequences.')
 
+        n_chars = 0
+        n_diffs = 0
         for c1, c2 in zip(s1, s2):
             present = self._pair_table.get((c1, c2), None)
             if present:
                 row, col = present
                 N[row,col] += 1
+                n_chars += 1
+                if row != col:
+                    n_diffs += 1
+        if n_chars == 0:
+            raise dnc.NoSharedCharactersError()
+        if n_diffs == n_chars:
+            raise dnc.AllCharactersDifferentError()
         return N
