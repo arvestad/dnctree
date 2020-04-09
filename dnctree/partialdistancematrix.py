@@ -1,34 +1,6 @@
 import math
 import sys
 
-def poisson_distance(t1, t2, s1, s2, supress_warnings=False):
-    '''
-    Default method for distance estimation in PartialDistanceMatrix.get().
-
-    A better alternative, with the same signature, should be provided
-    when instantiating PartialDistanceMatrix.
-    '''
-    n_chars = 0
-    n_diffs = 0
-    for c1, c2 in zip(s1, s2):
-        if c1=='-' or c2=='-':
-            continue
-        if c1 != c2:
-            n_diffs += 1
-        n_chars += 1
-
-    if n_chars == 0:
-        if not supress_warnings:
-            print(f'Warning: No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to distance=2.5.', file=sys.stderr)
-        return 2.5
-    if n_diffs == n_chars:
-        if not supress_warnings:
-            print(f'Warning: Degenerate sequence pair: {t1} and {t2}. All shared characters are different. Defaulting to distance=2.5.', file=sys.stderr)
-        return 2.5
-
-    distance = - math.log(1 - n_diffs/n_chars)
-    return distance
-
 
 class PartialDistanceMatrix:
     '''
@@ -38,48 +10,53 @@ class PartialDistanceMatrix:
     This class pretends it is a distance matrix. Distances are computed on-demand, when
     they are asked for.
     '''
-    def __init__(self, msa, verbose=False, distance_estimator=poisson_distance):
+    def __init__(self, msa, distance_fcn, verbose=False):
         '''
         The constructor initializes the distance matrix as a dict with dicts so that
         we can have distances as self.dm[t1][t2] elements. If no distance has been estimated to
         or from tx, then self.dm[tx] is empty.
 
-        The "distance_estimator" is a function.
+        The "distance_estimator" is a function which takes a count matrix N,
+        where element N_{r,c} counts the number of amino pairs (r, c) in an MSA.
         '''
         self.msa = msa
         self.taxa = list(msa.taxa())
         self.n_taxa = len(self.taxa)
 
-        self._distance_function = distance_estimator
+        self._distance_function = distance_fcn
 
         self._dm = dict()
         self._internal_vertex_counter = 0
         self._last_progress = 0
-        for t in msa.taxa():
+        for t in self.taxa():
             self._dm[t] = dict()
         self._n_distances_computed = 0
-        self.verbose = verbose
+        if verbose:
+            self.verbose = verbose
+        else:
+            self.verbose = []
+
 
     def get(self, t1, t2):
         '''
-        Retrieve the distanve between taxa t1 and t2. If it is not in the matrix, then it
+        Retrieve the distance between taxa t1 and t2. If it is not in the matrix, then it
         is computed using the given model (see constructor).
         '''
         if t2 not in self._dm[t1]:
             d = self._compute_distance(t1, t2)
             self.set(t1, t2, d)
+            self._n_distances_computed += 1
             return d
         else:
             return self._dm[t1][t2]
 
 
     def set(self, t1, t2, d):
+        '''
+        Manipulate the distance matrix. Primary usage is to set up for unit testing.
+        '''
         self._dm[t1][t2] = d
         self._dm[t2][t1] = d
-
-
-    def taxa(self):
-        return self.msa.taxa()
 
 
     def create_unique_vertex_id(self):
@@ -142,12 +119,23 @@ class PartialDistanceMatrix:
         Return the estimated distance between the sequences of the two taxa.
         As a first rough attempt, we just use Poisson distance.
         '''
-        s1 = self.msa[t1].seq
-        s2 = self.msa[t2].seq
+        # s1 = self.msa[t1].seq
+        # s2 = self.msa[t2].seq
 
         supress_warnings = 'supress_warnings'  in self.verbose
-        distance = self._distance_function(t1, t2, s1, s2, supress_warnings)
-        self._n_distances_computed += 1
+        try:
+            N = self.msa.count_pairs(t1, t2)
+        except dnc.NoSharedCharactersError:
+            if not supress_warnings:
+                print(f'No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to maximal distance.', file=sys.stderr)
+            return self._maximal_distance
+        except dnc.AllCharactersDifferentError:
+            if not supress_warnings:
+                print(f'All characters shared by {t1} and {t2}, are different. Defaulting to maximal distance.', file=sys.stderr)
+            return self._maximal_distance
+
+        distance = self._distance_function(N)
+#        print(f'{t1}\t{t2}\t{distance}', file=sys.stderr)
         return distance
 
 
