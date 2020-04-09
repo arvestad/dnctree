@@ -3,17 +3,24 @@ import random
 import sys
 import textwrap
 
+from modelmatcher import RateMatrix
+
 from dnctree.tree import Tree
-
-#from dnctree.dnctree import hubba
 from dnctree.partialdistancematrix import PartialDistanceMatrix
+from dnctree.distances import ml_distance_estimate
 
-def divide_n_conquer_tree(msa, max_n_attempts=100, max_clade_size=0.5, base_case_size=100, first_triple=None, verbose=False):
+dna_models = ['HKY', 'JC']
+
+def divide_n_conquer_tree(msa, model_name=None, distance_fcn=None, max_n_attempts=100, max_clade_size=0.5, base_case_size=100, first_triple=None, verbose=False):
     '''
-    Input: a Bio.Align object
-    Returns: a tree
+    Input: A BioPython MSA object (for the input alignment), and a function of three
+           args (two taxa names and a NumPy 20x20 matrix with amino acid counts
+           for estimating evolutionary distance.
+    Returns: a tree as a Newick-formatted string.
 
     Parameters:
+    distance_fcn:   A function that takes a square NumPy matrix of pairwise column counts (i.e.,
+                    contains the number of different replacements/substitutions.
     max_n_attempts: The number of times we try to find a suitable taxa triple to recurse on.
     max_clade_size: The fraction of the taxa that are required before deciding we are happy
                     with a triple. We require that the largest subproblem (clade) has at most this fraction of taxa.
@@ -24,12 +31,56 @@ def divide_n_conquer_tree(msa, max_n_attempts=100, max_clade_size=0.5, base_case
     assert max_clade_size >= 0.5  # Pointless to try smaller values
     assert max_n_attempts >= 1    # Truly a minimum
 
-    dm = PartialDistanceMatrix(msa, verbose=verbose)                 # We will gradually add distances to this "matrix"
+    distance_fcn = choose_distance_function(msa.type, model_name)
+
+    dm = PartialDistanceMatrix(msa, distance_fcn, verbose=verbose)                 # We will gradually add distances to this "matrix"
 
     t = dnc_tree(dm, msa.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
     if verbose:
         dm._print_computational_savings()
     return t
+
+
+def testing_divide_n_conquer(model, max_n_attempts=100, max_clade_size=0.5, base_case_size=100, first_triple=None, verbose=False):
+    '''
+    The purpose with this function is to be able to test the algorithm and
+    see how sensitive it is to errors in the distance estimation.
+
+    Input and parameters:
+
+    model_tree:   A tree defining the distances.
+    epsilon:      Decides the error added to distances.
+
+    Other parameters are the same as for "divide_n_conquer".
+    '''
+
+    t = dnc_tree(model, model.taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
+    return t
+
+
+def choose_distance_function(seqtype, model_name=None):
+    '''
+    Pick a model depending on sequence type and model_name.
+    If the two args are not in harmony (e.g., 'dna' and 'WAG'), throw an error.
+
+    seqtype:   'aa' or 'dna'
+    model_name: 'WAG' or any other model implemented in the module "modelmatcher".
+                'kimura' is also an acceptable string.
+    '''
+    if seqtype == 'aa':
+        chosen_model = 'WAG'    # Standard choice
+        if model_name:           # Replace the standard choice
+            if model_name in dna_models:
+                raise Exception('You have requested a DNA model for amino acid sequences.')
+            else:
+                chosen_model = model_name
+        model = RateMatrix.instantiate(chosen_model)
+        distance_fcn = lambda N: ml_distance_estimate(model, N) # XXX Correct call?
+        return distance_fcn
+    elif seqtype == 'dna':
+        raise Exception('DNA models not yet implemented, sorry.')
+    else:
+        raise Exception(f'Not a valid sequence type: {seqtype}.')
 
 
 def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=False):
@@ -77,7 +128,7 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose):
       max_clade_size  Try not to accept a taxa sample that defines one of the clades as larger than this,
                       as a fraction of the taxa. (It is a float.)
     '''
-    N = len(taxa) * max_clade_size
+    N = len(taxa) * max_clade_size # The max clade size is given as a fraction. N is the actual number of taxa to allow for a subproblem.
     best_so_far = None
     smallest_large_clade_so_far = len(taxa) # Initialize with worst possible subproblem size
     for i in range(max_n_attempts):
@@ -112,6 +163,9 @@ def clade_sort_taxa(dm, taxa, l1, l2, l3):
         if x not in [l1, l2, l3]:
             clade = quartet_test(dm, l1, l2, l3, x)
             clade_assignment[clade].append(x)
+
+    # for cl in [l1, l2, l3]:
+    #     print(f'Clade {cl}: {clade_assignment[cl]}', file=sys.stderr)
     return clade_assignment[l1], clade_assignment[l2], clade_assignment[l3]
 
 
@@ -119,42 +173,20 @@ def quartet_test(dm, l1, l2, l3, x):
     '''
     Return the leaf (l1, l2, or l3) of which leaf a quartet test suggests x belongs to.
     '''
-    def q_test(a, b, c, d):
-        '''
-        Check whether d(a,b) + d(c, d) < d(a, c) + d(b, d)
-        '''
-        # print(f'q_test: {a} with {b}, {c}, {d}', file=sys.stderr)
-        # print(f'   d({a}, {b}) + d({c},{d}) = {dm.get(a, b) + dm.get(c, d)} \t d({a}, {c}) + d({b},{d}) = {dm.get(a, c) + dm.get(b,        d)}', file=sys.stderr)
-        return dm.get(a, b) + dm.get(c, d) <= dm.get(a, c) + dm.get(b, d)
-
     def q_diff(a, b, c, d):
         '''
         Check whether d(a,b) + d(c, d) < d(a, c) + d(b, d)
         '''
-        return dm.get(a, b) + dm.get(c, d) - dm.get(a, c) + dm.get(b, d)
-
+        return dm.get(a, b) + dm.get(c, d) - dm.get(a, c) - dm.get(b, d)
 
     options = [(l1, q_diff(x, l1, l2, l3)),
                (l2, q_diff(x, l2, l1, l3)),
                (l3, q_diff(x, l3, l1, l2)),]
     choice = min(options, key = lambda pair: pair[1])
-#    print(f'Choice: {x} belongs to {choice}. \t{options}', file=sys.stderr)
+#    print(f'{x}, choice: {choice} options: {options}', file=sys.stderr)
     return choice[0]
 
-    # if q_test(x, l1, l2, l3):
-    #     return l1
-    # elif q_test(x, l2, l1, l3):
-    #     return l2
-    # elif q_test(x, l3, l1, l2):
-    #     return l3
-    # else:
-    #     # We end up here if the distance matrix is not additive.
-    #     # Let's just make an educated guess instead.
-    #     options = [(l1, q_diff(l1, x, l2, l3)),
-    #                (l2, q_diff(l2, x, l1, l3)),
-    #                (l3, q_diff(l3, x, l1, l2)),]
-    #     choice = min(options, key = lambda pair: pair[1])
-    #     return choice[0]
+
 
 
 def connect_the_trees(subtrees, connecting_node):
@@ -189,7 +221,7 @@ def nj_selection_function(dm, current_leaves):
     return best_so_far
 
 
-def dnc_neighborjoining(dm, taxa, verbose):
+def dnc_neighborjoining(dm, taxa, verbose=False):
     '''
     An implementation of NJ meant to compute base cases in dnctree.
 
@@ -205,7 +237,7 @@ def dnc_neighborjoining(dm, taxa, verbose):
         t.add_edge(taxa[0], taxa[1])
         return t
     else:
-        current_leaves = taxa
+        current_leaves = taxa[:] # Slicing out a copy
         while len(current_leaves) > 3:
             x, y = nj_selection_function(dm, current_leaves)
             # if verbose:
@@ -216,17 +248,13 @@ def dnc_neighborjoining(dm, taxa, verbose):
             current_leaves.append(new_v)
             t.add_edge(x, new_v)
             t.add_edge(y, new_v)
-        else:
-            c = dm.create_unique_vertex_id()
-            for leaf in current_leaves:
-                t.add_edge(leaf, c)
-            t.set_start_node(c)
-            return t
+
+        c = dm.create_unique_vertex_id()
+        for leaf in current_leaves:
+            t.add_edge(leaf, c)
+        t.set_start_node(c)
+        return t
 
 def _taxa_string_helper(l, indent):
     s = textwrap.fill(', '.join(l), width=100 - indent)
     return textwrap.indent(s, ' ' * indent)
-
-def test_nj():
-    dm = PartialDistanceMatrix()
-
