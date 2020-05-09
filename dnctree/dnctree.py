@@ -161,31 +161,12 @@ def clade_sort_taxa(dm, taxa, l1, l2, l3):
     clade_assignment = {l1: [l1], l2: [l2], l3: [l3]} # Keep track of clade assignment.
     for x in taxa:
         if x not in [l1, l2, l3]:
-            clade = quartet_test(dm, l1, l2, l3, x)
+            clade = dm.quartet_test(l1, l2, l3, x)
             clade_assignment[clade].append(x)
 
     # for cl in [l1, l2, l3]:
     #     print(f'Clade {cl}: {clade_assignment[cl]}', file=sys.stderr)
     return clade_assignment[l1], clade_assignment[l2], clade_assignment[l3]
-
-
-def quartet_test(dm, l1, l2, l3, x):
-    '''
-    Return the leaf (l1, l2, or l3) of which leaf a quartet test suggests x belongs to.
-    '''
-    def q_diff(a, b, c, d):
-        '''
-        Check whether d(a,b) + d(c, d) < d(a, c) + d(b, d)
-        '''
-        return dm.get(a, b) + dm.get(c, d) - dm.get(a, c) - dm.get(b, d)
-
-    options = [(l1, q_diff(x, l1, l2, l3)),
-               (l2, q_diff(x, l2, l1, l3)),
-               (l3, q_diff(x, l3, l1, l2)),]
-    choice = min(options, key = lambda pair: pair[1])
-#    print(f'{x}, choice: {choice} options: {options}', file=sys.stderr)
-    return choice[0]
-
 
 
 
