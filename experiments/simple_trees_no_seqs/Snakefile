@@ -1,0 +1,83 @@
+import pandas
+import re
+import seaborn
+
+import matplotlib
+matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
+quicktesting=False
+if quicktesting:
+    DEPTH=5
+    N_REPETITIONS=10
+    ERROR_RATES=[0.05, 0.075, 0.2]
+    BASECASESIZES=[sz for sz in range(5,15, 5)]
+else:
+    DEPTH=7
+    N_REPETITIONS=100
+    ERROR_RATES=[0.05, 0.075, 0.1, 0.125,0.15,0.175,0.2]
+    BASECASESIZES=[sz for sz in range(5,40,10)]
+
+#BASECASESIZES=[sz for sz in range(5,40,10)]
+
+rule all:
+     input: f"simple_tree_recovery_d{DEPTH}_rf.pdf", f"simple_tree_recovery_d{DEPTH}_tm.pdf"
+
+rule make_figure:
+     input: [f"symmetric_diff_collected_e{ERR}.txt" for ERR in ERROR_RATES]
+     output: "simple_tree_recovery_d{depth}_rf.pdf", "simple_tree_recovery_d{depth}_tm.pdf", 'mean_distances_d{depth}.txt'
+     run:
+        rf_data = list()        # Collect Robinson-Foulds distances here
+        tm_data = list()        # and Tree Matching distances here
+        methods = list(map(lambda bz: 'DnC_' + str(bz), BASECASESIZES))
+        methods = [f'DnC_{b}' for b in BASECASESIZES]
+        methods.append('NJ')
+        for f in input:
+            m = re.search('collected_e(.+).txt', f)
+            err_mode = m.group(1)
+            with open(f) as h:
+                for line in h:
+                    if line[0]=='#':
+                        continue
+                    tokens = line.split()
+                    if tokens[0] == 'RF':
+                        rf_errors = tokens[1:]
+                        for rf, method in zip(rf_errors, methods):
+                            rf_data.append([err_mode, method, float(rf)])
+                    if tokens[0] == 'TM':
+                        tm_errors = tokens[1:]
+                        for tm, method in zip(tm_errors, methods):
+                            tm_data.append([err_mode, method, float(tm)])
+
+        df = pandas.DataFrame(data=rf_data, columns=['E','Tool', 'RelRF'])
+        ax = seaborn.boxplot(data=df, x='E', y='RelRF', hue='Tool')
+        ax.set_title('RF distance')
+        plt.savefig(output[0])
+        with open(output[2], 'w') as oh:
+            print(df.groupby(['Tool', 'E']).describe(), file=oh)
+
+        plt.clf()
+        df = pandas.DataFrame(data=tm_data, columns=['E','Tool', 'TM dist'])
+        ax = seaborn.boxplot(data=df, x='E', y='TM dist', hue='Tool')
+        ax.set_title('Tree matching distance')
+        plt.savefig(output[1])
+        with open(output[2], 'a') as oh:
+            print(file=oh)
+            print(df.groupby(['Tool', 'E']).describe(), file=oh)
+
+
+rule collector:
+     input: ["symmetric_diff_for_dnc_nj_d" + str(DEPTH) + "_e{ERR}_n" + str(n) + ".txt" for n in range(N_REPETITIONS)]
+     output: "symmetric_diff_collected_e{ERR}.txt"
+     shell: "cat {input} > {output}"
+
+
+rule sim_tree:
+     output: "t_d{DEPTH}.tree"
+     shell: "../../dnctree/stupid_tree.py -d {DEPTH} > {output}"
+
+rule run_dnctree:
+     input: "t_d{DEPTH}.tree"
+     output: "symmetric_diff_for_dnc_nj_d{DEPTH}_e{ERR}_n{n}.txt"
+     params: err="{ERR}"
+     shell: "dnctree --alg-testing-base-case-sizes " + ','.join(map(str, BASECASESIZES)) + "  --alg-testing {params.err} --alg-testing-nj {input} > {output}"
