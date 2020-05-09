@@ -55,8 +55,36 @@ class PartialDistanceMatrix:
         '''
         Manipulate the distance matrix. Primary usage is to set up for unit testing.
         '''
+#        print(f'set d({t1}, {t2}) = {d}')
         self._dm[t1][t2] = d
         self._dm[t2][t1] = d
+
+
+    def quartet_test(self, l1, l2, l3, x):
+        '''
+        Return the leaf (l1, l2, or l3) of which leaf a quartet test suggests x belongs to.
+        '''
+        def q_diff(a, b, c, d):
+            '''
+            Return the perceived length _m_ of the mid branch separating ab with cd.
+
+            a     c
+             \___/
+             /   \
+            b     d
+            '''
+
+            m1 = self.get(a, c) + self.get(b, d)
+            m2 = self.get(a, d) + self.get(b, c)
+            m = m1 + m2 - 2*(self.get(a, b) + self.get(c, d))
+            return m
+
+        options = [(l1, q_diff(x, l1, l2, l3)),
+                   (l2, q_diff(x, l2, l1, l3)),
+                   (l3, q_diff(x, l3, l1, l2)),]
+        choice = max(options, key = lambda pair: pair[1])
+        #    print(f'{x}, choice: {choice} options: {options}', file=sys.stderr)
+        return choice[0]
 
 
     def create_unique_vertex_id(self):
@@ -84,13 +112,14 @@ class PartialDistanceMatrix:
             other0 = three_taxa[i]
             other1 = three_taxa[(i - 1) % 3]
             other2 = three_taxa[(i + 1) % 3]
-            d = (self.get(other0, other1) + self.get(other0, other2)
-                 - self.get(other1, other2)) / 2
-            self.set(v_unique_id, other0, d)
+            d_12 = self.get(other1, other2)
+            # d = (self.get(other0, other1) + self.get(other0, other2)
+            #      - self.get(other1, other2)) / 2
+            # self.set(v_unique_id, other0, d)
 
             # Estimate distance from all taxa in clade to v
             for t in three_clades[i]:
-                d = 0.5 * (self.get(other1, t) + self.get(other2, t))
+                d = 0.5 * (self.get(other1, t) + self.get(other2, t) - d_12)
                 self.set(v_unique_id, t, d)
 
         return v_unique_id
