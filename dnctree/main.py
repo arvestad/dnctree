@@ -39,9 +39,12 @@ def cmd_line_args():
     group.add_argument('--first-triple', nargs=3, metavar='taxa',
                        help='Give three taxa to induce first subproblems.')
 
-    group.add_argument('--alg-testing', type=float, default=0.1,
+    algtesting = ap.add_argument_group('Development options', 'Temporary option setup.')
+    algtesting.add_argument('--alg-testing', type=float, default=0.1,
                        help='Enables algorithm evaluation. The infile is read as model tree, defining distance, and the parameter to this option is the randomised error.')
-    group.add_argument('--alg-testing-nj', action='store_true',
+    algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
+                       help='Write a comma-separated list of base-case sizes')
+    algtesting.add_argument('--alg-testing-nj', action='store_true',
                        help='Compare with NJ. This option is dependent on --alg-testing.')
 
     args = ap.parse_args()
