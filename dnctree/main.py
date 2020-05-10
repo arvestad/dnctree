@@ -1,7 +1,9 @@
 import argparse
+import os
 import sys
 import traceback
 
+from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
 from dnctree import divide_n_conquer_tree, choose_distance_function
 from dnctree.msa import MSA
@@ -38,14 +40,17 @@ def cmd_line_args():
                        help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
     group.add_argument('--first-triple', nargs=3, metavar='taxa',
                        help='Give three taxa to induce first subproblems.')
+    group.add_argument('--secret-developer-options', action='store_true',
+                       help='This option shows how to access secret expert developer options')
 
-    algtesting = ap.add_argument_group('Development options', 'Temporary option setup.')
-    algtesting.add_argument('--alg-testing', type=float, default=0.1,
-                       help='Enables algorithm evaluation. The infile is read as model tree, defining distance, and the parameter to this option is the randomised error.')
-    algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
-                       help='Write a comma-separated list of base-case sizes')
-    algtesting.add_argument('--alg-testing-nj', action='store_true',
-                       help='Compare with NJ. This option is dependent on --alg-testing.')
+    if 'DNCTREE_TESTING' in os.environ:
+        algtesting = ap.add_argument_group('Development options', 'Secret option setup.')
+        algtesting.add_argument('--alg-testing', type=float,
+                                help='Enables algorithm evaluation. The infile is read as model tree, defining distance, and the parameter to this option is the randomised error.')
+        algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
+                                help='Write a comma-separated list of base-case sizes')
+        algtesting.add_argument('--alg-testing-nj', action='store_true',
+                                help='Compare with NJ. This option is dependent on --alg-testing.')
 
     args = ap.parse_args()
     return args
@@ -76,9 +81,15 @@ def main():
         args = cmd_line_args()
         check_args(args)
 
-        if args.alg_testing:
-            run_alg_testing(args)
-            sys.exit()
+        if 'DNCTREE_TESTING' in os.environ:
+            if args.alg_testing:
+                run_alg_testing(args)
+                sys.exit()
+
+        if args.secret_developer_options:
+            print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
+            sys.exit(0)
+
 
         if args.format == 'guess':
             inputformat = guess_format(args.infile)
@@ -88,6 +99,10 @@ def main():
 
     except KeyboardInterrupt:
         sys.exit()
+    except FileNotFoundError:
+        sys.exit(f'Could not read file "{args.infile}"')
+    except AlvPossibleFormatError:
+        sys.exit(f'File "{args.infile}" does not look like an alignment')
     except Exception as e:
         print('Error when reading data in dnctree:', e, file=sys.stderr)
         traceback.print_exc()
