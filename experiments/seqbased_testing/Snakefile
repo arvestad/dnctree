@@ -1,0 +1,31 @@
+SEQLEN=1000000
+DEPTH=5 #11
+N_REPETITIONS=1
+BASECASESIZE=20  #100
+
+rule all:
+     input: "rf_collected.txt"
+
+rule collector:
+     input: [f"rf_{n}.txt" for n in range(N_REPETITIONS)]
+     output: "rf_collected.txt"
+     shell: "cat {input} > {output}"
+
+rule sim_seqs:
+     input: "t{n}.tree"
+     output: "s{n}.phylip"
+     shell: "seq-gen -q -m WAG  -l {SEQLEN} < {input} > {output}"
+
+rule sim_tree:
+     output: "t{n}.tree"
+     shell: "../dnctree/stupid_tree.py -d {DEPTH} > {output}"
+
+rule run_dnctree:
+     input: "s{n}.phylip"
+     output: "inferred_{n}.tree"
+     shell: "dnctree --base-case-size {BASECASESIZE}  -m WAG {input} > {output}"
+
+rule run_rf:
+    input: "inferred_{n}.tree", "t{n}.tree"
+    output: "rf_{n}.txt"
+    shell: "rf {input} > {output}"
