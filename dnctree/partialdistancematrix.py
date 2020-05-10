@@ -64,6 +64,7 @@ class PartialDistanceMatrix:
         '''
         Return the leaf (l1, l2, or l3) of which leaf a quartet test suggests x belongs to.
         '''
+
         def q_diff(a, b, c, d):
             '''
             Return the perceived length _m_ of the mid branch separating ab with cd.
@@ -113,14 +114,28 @@ class PartialDistanceMatrix:
             other1 = three_taxa[(i - 1) % 3]
             other2 = three_taxa[(i + 1) % 3]
             d_12 = self.get(other1, other2)
-            # d = (self.get(other0, other1) + self.get(other0, other2)
-            #      - self.get(other1, other2)) / 2
-            # self.set(v_unique_id, other0, d)
+
+            # print(f'other0: {other0}\tother1: {other1}\tother2: {other2}\t')
+            d_sum = 0           # \sum_{u \in \{other1, other2\}} \sum_{v\in clade(opposite of u)} d(u, other0) + d(v, other0) - d(u, v)
+            n_terms = 0
+            for j in [-1, +1]:
+                u = three_taxa[(i+j) % 3]
+                d_u_other0 = self.get(u, other0) # First term in sum (see comment for d_sum): d(u_other0)
+                for v in three_clades[(i-j) % 3]:
+                    d_sum += d_u_other0 + self.get(v, other0) - self.get(u, v)
+                    n_terms += 2 # Adding distance of v_unique to other0 in the sum, so compensating for that
+            d = d_sum / n_terms
+            self.set(v_unique_id, other0, d)
+            # print(f'\td(new_vertex, {other0}) = {d:.3}')
 
             # Estimate distance from all taxa in clade to v
             for t in three_clades[i]:
+                if t == other0:
+                    continue    # We have already set the distance for this taxa
                 d = 0.5 * (self.get(other1, t) + self.get(other2, t) - d_12)
                 self.set(v_unique_id, t, d)
+                # print(f'\tt: {t}, d(new_vertex, {t}) = {d:.4} \t 0.5*d({other1}, {t})={self.get(other1, t):.3} + d({other2}, {t})={self.get(other2, t):.3} - d({other1}, {other2})={d_12:.3}')
+
 
         return v_unique_id
 
