@@ -20,8 +20,11 @@ else:
 
 #BASECASESIZES=[sz for sz in range(5,40,10)]
 
+envvars: 'DNCTREE_TESTING'
+
 rule all:
      input: f"simple_tree_recovery_d{DEPTH}_rf.pdf", f"simple_tree_recovery_d{DEPTH}_tm.pdf"
+
 
 rule make_figure:
      input: [f"symmetric_diff_collected_e{ERR}.txt" for ERR in ERROR_RATES]
@@ -54,7 +57,8 @@ rule make_figure:
         ax.set_title('RF distance')
         plt.savefig(output[0])
         with open(output[2], 'w') as oh:
-            print(df.groupby(['Tool', 'E']).describe(), file=oh)
+            with pandas.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+                print(df.groupby(['Tool', 'E']).describe(), file=oh)
 
         plt.clf()
         df = pandas.DataFrame(data=tm_data, columns=['E','Tool', 'TM dist'])
@@ -62,8 +66,9 @@ rule make_figure:
         ax.set_title('Tree matching distance')
         plt.savefig(output[1])
         with open(output[2], 'a') as oh:
-            print(file=oh)
-            print(df.groupby(['Tool', 'E']).describe(), file=oh)
+            with pandas.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+                print(file=oh)
+                print(df.groupby(['Tool', 'E']).describe(), file=oh)
 
 
 rule collector:
