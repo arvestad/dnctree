@@ -1,6 +1,6 @@
 import math
 import sys
-
+import dnctree.exceptions as dnc
 
 class PartialDistanceMatrix:
     '''
@@ -22,13 +22,14 @@ class PartialDistanceMatrix:
         self.msa = msa
         self.taxa = list(msa.taxa())
         self.n_taxa = len(self.taxa)
+        self._maximal_distance = 5
 
         self._distance_function = distance_fcn
 
         self._dm = dict()
         self._internal_vertex_counter = 0
         self._last_progress = 0
-        for t in self.taxa():
+        for t in self.taxa:
             self._dm[t] = dict()
         self._n_distances_computed = 0
         if verbose:
