@@ -108,7 +108,7 @@ def main():
             sys.exit(0)
 
         if args.pahmm and not pahmm_available():
-            print("Could not use '--pahmm' because the pahmm library.", file=sys.stderr)
+            print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
             print("To install pahmm, run 'python3 -m pip install pahmm'.", file=sys.stderr)
             sys.exit(1)
 
