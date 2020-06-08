@@ -75,6 +75,6 @@ def _tree_to_string_helper(d, v, source):
             n += 1
             subtrees.append(_tree_to_string_helper(d, neighbor, v))
     if n == 0:
-        return v
+        return v.decode() if isinstance(v, bytes) else v
     else:
         return '(' + ','.join(subtrees) + ')'

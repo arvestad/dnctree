@@ -2,6 +2,7 @@ import itertools
 import random
 import sys
 import textwrap
+import importlib.util
 
 from modelmatcher import RateMatrix
 
@@ -9,10 +10,12 @@ from dnctree.tree import Tree
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import ml_distance_estimate
 
+
 dna_models = ['HKY', 'JC']
 
 
-def divide_n_conquer_tree(msa, model_name=None, distance_fcn=None, max_n_attempts=100, max_clade_size=0.5, base_case_size=100, first_triple=None, verbose=False):
+def divide_n_conquer_tree(msa, model_name=None, distance_fcn=None, max_n_attempts=100, max_clade_size=0.5,
+                          base_case_size=100, first_triple=None, verbose=False):
     '''
     Input: A BioPython MSA object (for the input alignment), and a function of three
            args (two taxa names and a NumPy 20x20 matrix with amino acid counts
@@ -237,6 +240,13 @@ def dnc_neighborjoining(dm, taxa, verbose=False):
         t.set_start_node(c)
         return t
 
+
 def _taxa_string_helper(l, indent):
-    s = textwrap.fill(', '.join(l), width=100 - indent)
+    s = textwrap.fill(', '.join(map(lambda t: t.decode() if isinstance(t, bytes) else t, l)), width=100 - indent)
     return textwrap.indent(s, ' ' * indent)
+
+
+def pahmm_available() -> bool:
+    """ Check if the pahmm-library is available.
+    """
+    return bool(importlib.util.find_spec("pahmm"))

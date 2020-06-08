@@ -144,9 +144,6 @@ def main():
 
         if not args.pahmm:
             msa = MSA(alv_msa)
-            if args.verbose:
-                n = len(msa.taxa())
-                print(f'Input MSA has {n} taxa.', file=sys.stderr)
         else:
             from pahmm import BandingEstimator
             # Using pahmm
@@ -157,6 +154,10 @@ def main():
             print("Generating rough distance estimates...")
             msa = MSApaHMM(be.execute_jtt_model())
             print("Done.")
+
+        if args.verbose:
+            n = len(msa.taxa())
+            print(f'Input MSA has {n} taxa.', file=sys.stderr)
     except KeyboardInterrupt:
         sys.exit()
 
@@ -166,7 +167,6 @@ def main():
             model_name = args.model
 
         t = divide_n_conquer_tree(msa, model_name=model_name,
-                                  distance_fcn = None,
                                   max_n_attempts=args.max_n_attempts,
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,

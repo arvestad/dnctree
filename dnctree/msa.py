@@ -1,11 +1,17 @@
 from Bio.Alphabet import ProteinAlphabet, AlphabetEncoder, Gapped
 from Bio.Align import MultipleSeqAlignment
+from Bio.SeqRecord import SeqRecord
+from Bio.Seq import Seq
 
 import alv.alignment
 import itertools as it
 import numpy as np
 
+from dnctree import pahmm_available
 import dnctree.exceptions as dnc
+if pahmm_available():
+    from pahmm import Sequences
+
 
 class MSA:
     '''
@@ -68,7 +74,6 @@ class MSA:
         except KeyError:
             raise KeyError(f'"{key}" is not a known accession/id in the given MSA')
 
-
     def count_pairs(self, acc1, acc2):
         '''
         Count the amino acid pairs in two aligned sequences.
@@ -78,7 +83,6 @@ class MSA:
         s1 = self[acc1]
         s2 = self[acc2]
         return self._count_pairs(s1, s2)
-
 
     def _count_pairs(self, s1, s2):
         '''
@@ -107,3 +111,58 @@ class MSA:
         if n_diffs == n_chars:
             raise dnc.AllCharactersDifferentError()
         return N
+
+    @staticmethod
+    def can_retrieve_distances() -> bool:
+        """Checks if distances are readily available and do not have to be
+        computed manually.
+        """
+        return False
+
+    def distance(self, t1, t2) -> float:
+        """
+        We cannot calculate distances using the MSA-class.
+        Do not call this method!
+        """
+        raise Exception("Could not retrieve distance. (MSA.can_retrieve_distances() == False)")
+
+
+class MSApaHMM:
+    """
+    Storing multiple sequence alignments.
+
+    :param sequence_type can be 'aa' (Amino-acids) or 'dna' (Nucleotides)
+    """
+    def __init__(self, sequences: Sequences, sequence_type='aa'):
+        self.type = sequence_type
+        self._sequences = sequences
+        self._taxa = list(map(self._sequences.get_seq_name, range(len(self._sequences))))
+
+    def taxa(self):
+        return self._taxa
+
+    def sequences(self):
+        """
+        Return the sequences data-structure.
+        """
+        return self._sequences
+
+    def __getitem__(self, key):
+        """
+        Return a fake SeqRecord. We don't want to construct a SeqRecord from a real sequence
+        because that would involve converting the sequence to a Python-string. That's an O(n) operation
+        and that's not acceptable. Distance calculations are left entirely to paHMM anyway.
+        """
+        return SeqRecord(Seq(""))
+
+    @staticmethod
+    def can_retrieve_distances() -> bool:
+        """Checks if distances are readily available and do not have to be
+        computed manually.
+        """
+        return True
+
+    def distance(self, t1: bytes, t2: bytes) -> float:
+        """Retrieve the distance between two sequences.
+        """
+        return self.sequences().get_distance_from_names(t1, t2)

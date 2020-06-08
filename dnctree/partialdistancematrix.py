@@ -9,7 +9,8 @@ class PartialDistanceMatrix:
     because we are not going to compute all pairwise distances.
 
     This class pretends it is a distance matrix. Distances are computed on-demand, when
-    they are asked for.
+    they are asked for. If pahmm is set to True, then distances are computed using
+    the pahmm library.
     '''
     def __init__(self, msa, distance_fcn, verbose=False):
         '''
@@ -159,7 +160,6 @@ class PartialDistanceMatrix:
             self.set(v_new, w, d)
         return v_new
 
-
     def _compute_distance(self, t1, t2):
         '''
         Return the estimated distance between the sequences of the two taxa.
@@ -168,7 +168,11 @@ class PartialDistanceMatrix:
         # s1 = self.msa[t1].seq
         # s2 = self.msa[t2].seq
 
-        supress_warnings = 'supress_warnings'  in self.verbose
+        if self.msa.can_retrieve_distances():
+            return self.msa.distance(t1, t2)
+
+        supress_warnings = 'supress_warnings' in self.verbose
+
         try:
             N = self.msa.count_pairs(t1, t2)
         except dnc.NoSharedCharactersError:
