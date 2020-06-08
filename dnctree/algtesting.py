@@ -4,8 +4,9 @@ import random
 import sys
 
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree.dnctree import testing_divide_n_conquer
+from dnctree import testing_divide_n_conquer
 from tree_matching_distance import distance as matching_distance
+
 
 def run_alg_testing(args):
     dt = TestingPartialDistanceMatrix(args.infile, args.alg_testing)
@@ -49,6 +50,7 @@ def run_alg_testing(args):
     else:
         print(rf_string)
         print(tm_string)
+
 
 class TestingPartialDistanceMatrix(PartialDistanceMatrix):
     def __init__(self, treefile, error_parameter, verbose=False):

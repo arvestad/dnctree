@@ -2,6 +2,7 @@ import math
 import sys
 import dnctree.exceptions as dnc
 
+
 class PartialDistanceMatrix:
     '''
     Represent distance matrices using a dictionary instead of a full (half) square matrix,
