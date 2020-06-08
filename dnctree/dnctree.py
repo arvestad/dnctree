@@ -36,7 +36,7 @@ def divide_n_conquer_tree(msa, model_name=None, distance_fcn=None, max_n_attempt
     dm = PartialDistanceMatrix(msa, distance_fcn, verbose=verbose)                 # We will gradually add distances to this "matrix"
 
     t = dnc_tree(dm, msa.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
-    if verbose:
+    if 'info' in verbose or 'verbose' in verbose:
         dm._print_computational_savings()
     return t
 
@@ -85,7 +85,7 @@ def choose_distance_function(seqtype, model_name=None):
 
 def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=False):
     if len(taxa) <= base_case_size:
-        if verbose:
+        if 'verbose' in verbose:
             print(f'Full NJ on {len(taxa)} taxa:', file=sys.stderr, flush=True)
             print(_taxa_string_helper(taxa, 2), file=sys.stderr, flush=True)
         t = dnc_neighborjoining(dm, taxa, verbose)
@@ -133,7 +133,7 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose):
     smallest_large_clade_so_far = len(taxa) # Initialize with worst possible subproblem size
     for i in range(max_n_attempts):
         v1, v2, v3 = random.sample(taxa, 3) # Three taxa strings
-        if verbose:
+        if 'verbose' in verbose:
             print(f'Attempt: {v1}, {v2}, {v3}.', end='  ', file=sys.stderr, flush=True)
         c1, c2, c3 = clade_sort_taxa(dm, taxa, v1, v2, v3) # Three groups of taxa: "clade wannabees"
         largest = max(len(c1), len(c2), len(c3)) # Out of the three found clades, which one is largest?

@@ -25,7 +25,7 @@ elif sys.version_info.minor < 2:
     sys.exit('\nSorry, Python < 3.2 is not supported\n')
 
 requirements = [
-    'alv',
+    'alv>=1.5',
     'modelmatcher>=1.1.3',
     'biopython>=1.70',
     'ete3>=3.1.1'

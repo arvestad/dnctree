@@ -25,11 +25,14 @@ def cmd_line_args():
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. Be specific if the file is not recognized automatically. Default: %(default)s")
 
-    ap.add_argument('--verbose', action='store_true',
-                    help='Output progress information')
+    info = ap.add_argument_group('Diagnostic output')
+    info.add_argument('-i', '--info', action='store_true',
+                      help='Show some basic info about input and output.')
+    info.add_argument('--verbose', action='store_true',
+                      help='Output progress information')
 
-    ap.add_argument('-w', '--supress-warnings', action='store_true',
-                    help='Do not warn about sequence pairs not sharing columns or sequences being completely different.')
+    info.add_argument('-w', '--supress-warnings', action='store_true',
+                      help='Do not warn about sequence pairs not sharing columns or sequences being completely different.')
 
     group = ap.add_argument_group('Expert options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
     group.add_argument('--base-case-size', default=100, type=int, metavar='int',
@@ -110,6 +113,8 @@ def main():
 
     try:
         verbosity = []
+        if args.info:
+            verbosity.append('info')
         if args.verbose:
             verbosity.append('verbose')
         if args.supress_warnings:
@@ -140,6 +145,6 @@ def main():
         sys.exit()
     except Exception as e:
         print('Error in dnctree:', e, file=sys.stderr)
-        # import traceback
-        # traceback.print_exc()
+        import traceback
+        traceback.print_exc()
         sys.exit(2)

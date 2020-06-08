@@ -49,7 +49,7 @@ class MSA:
         for i, seq in enumerate(seqs):
             acc = f'seq{i}'
             biopy_msa.add_sequence(acc, seq)
-        return cls(alv.alignment.aaAlignment(biopy_msa))         # Instantiate
+        return cls(alv.alignment.AminoAcidAlignment(biopy_msa))         # Instantiate
 
     @classmethod
     def from_biopython(cls, msa):
