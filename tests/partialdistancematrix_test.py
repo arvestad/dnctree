@@ -1,8 +1,9 @@
 import unittest
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree.dnctree import choose_distance_function
+from dnctree.dnctree import choose_distance_function, divide_n_conquer_tree
 from dnctree.distances import kimura_distance
+import dnctree.exceptions as dncexc
 
 class Test_partialdistancematrix(unittest.TestCase):
     def setUp(self):
@@ -28,3 +29,8 @@ class Test_partialdistancematrix(unittest.TestCase):
             self.pdm.set('WhateverAccession1', 'WhateverAccession2', 0)
         self.pdm.set('seq0', 'seq1', 1)
         self.assertEqual(1, self.pdm.get('seq0', 'seq1'))
+
+    # def test_bad_data(self):
+    #     msa = MSA.from_seq_list(['LARS----', '----SEAL', 'CEREALLE', 'SEALEAGE'])
+    #     with self.assertRaises(dncexc.NoSharedCharactersError):
+    #         divide_n_conquer_tree(msa, verbose=[])
