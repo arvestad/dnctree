@@ -5,25 +5,32 @@ import traceback
 
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
-from dnctree import divide_n_conquer_tree, choose_distance_function
-from dnctree.msa import MSA
+from dnctree import divide_n_conquer_tree, choose_distance_function, pahmm_available
+from dnctree.msa import MSA, MSApaHMM
 from dnctree.algtesting import run_alg_testing
+
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
 aa_default_model = aa_models[0]
 dna_models =['JC', 'K2P']
 dna_default_model = dna_models[0]
 
+
 def cmd_line_args():
     ap = argparse.ArgumentParser(description='Divide-and-conquer phylogenetic distance-based tree inference.')
-    ap.add_argument('infile', help='Multiple sequence alignment in a standard format (FASTA, Phylip, Nexus, Clustal, or Stockholm format).')
+    ap.add_argument('infile', help='Multiple sequence alignment in a standard format '
+                                   '(FASTA, Phylip, Nexus, Clustal, or Stockholm format).')
     ap.add_argument('-t', '--seqtype', default='guess', choices=['aa', 'dna', 'rna', 'guess'],
                     help='Set the sequence type to expect. The default is to guess the input type.')
     ap.add_argument('-m', '--model', default='guess', choices=['guess', 'kimura'] + aa_models + dna_models,
-                    help=f'Choose one of the named models or let dnctree guess based on the sequence type. Default is {aa_default_model}.')
+                    help=f'Choose one of the named models or let dnctree guess based on the sequence type. '
+                         f'Default is {aa_default_model}.')
     ap.add_argument('-f', '--format', default='guess',
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
-                    help="Specify what sequence type to assume. Be specific if the file is not recognized automatically. Default: %(default)s")
+                    help="Specify what sequence type to assume. "
+                         "Be specific if the file is not recognized automatically. Default: %(default)s")
+    ap.add_argument('--pahmm', action='store_true',
+                    help='Use paHMM library to calculate distances.')
 
     info = ap.add_argument_group('Diagnostic output')
     info.add_argument('-i', '--info', action='store_true',
@@ -32,15 +39,18 @@ def cmd_line_args():
                       help='Output progress information')
 
     info.add_argument('-w', '--supress-warnings', action='store_true',
-                      help='Do not warn about sequence pairs not sharing columns or sequences being completely different.')
+                      help='Do not warn about sequence pairs not sharing columns '
+                           'or sequences being completely different.')
 
-    group = ap.add_argument_group('Expert options', 'You need to understand the dnctree algorithm to tweak these options in a meaningful way.')
+    group = ap.add_argument_group('Expert options', 'You need to understand the dnctree '
+                                                    'algorithm to tweak these options in a meaningful way.')
     group.add_argument('--base-case-size', default=100, type=int, metavar='int',
                        help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
     group.add_argument('--max-n-attempts', type=int, default=1, metavar='int',
                        help='Make at most this many attempts. Default: %(default)s')
     group.add_argument('--max-clade-size', type=float, default=0.5, metavar='float',
-                       help='Stop sampling triples when the largest subclade is this fraction of the number of taxa. Default: %(default)s')
+                       help='Stop sampling triples when the largest subclade is this fraction of the '
+                            'number of taxa. Default: %(default)s')
     group.add_argument('--first-triple', nargs=3, metavar='taxa',
                        help='Give three taxa to induce first subproblems.')
     group.add_argument('--secret-developer-options', action='store_true',
@@ -49,7 +59,8 @@ def cmd_line_args():
     if 'DNCTREE_TESTING' in os.environ:
         algtesting = ap.add_argument_group('Development options', 'Secret option setup.')
         algtesting.add_argument('--alg-testing', type=float,
-                                help='Enables algorithm evaluation. The infile is read as model tree, defining distance, and the parameter to this option is the randomised error.')
+                                help='Enables algorithm evaluation. The infile is read as model tree, '
+                                     'defining distance, and the parameter to this option is the randomised error.')
         algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
                                 help='Write a comma-separated list of base-case sizes')
         algtesting.add_argument('--alg-testing-nj', action='store_true',
@@ -75,11 +86,14 @@ def check_args(args):
         sys.exit('Error: --base-case-size must be at least 3.')
 
     if args.max_n_attempts < 1:
-        print('Warning: --max-n-attempts cannot be smaller than 1. Setting that parameter to 1 and continuing.', file=sys.stderr)
+        print('Warning: --max-n-attempts cannot be smaller than 1. '
+              'Setting that parameter to 1 and continuing.', file=sys.stderr)
         args.max_n_attempts = 1
 
 
 def main():
+    args = None
+
     try:
         args = cmd_line_args()
         check_args(args)
@@ -93,12 +107,20 @@ def main():
             print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
             sys.exit(0)
 
+        if args.pahmm and not pahmm_available():
+            print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
+            print("To install pahmm, run 'python3 -m pip install pahmm'.", file=sys.stderr)
+            sys.exit(1)
 
         if args.format == 'guess':
             inputformat = guess_format(args.infile)
         else:
             inputformat = args.format
-        alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+
+        if not args.pahmm:
+            alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+        else:
+            alv_msa = None
 
     except KeyboardInterrupt:
         sys.exit()
@@ -120,7 +142,19 @@ def main():
         if args.supress_warnings:
             verbosity.append('supress_warnings')
 
-        msa = MSA(alv_msa)
+        if not args.pahmm:
+            msa = MSA(alv_msa)
+        else:
+            from pahmm import BandingEstimator
+            # Using pahmm
+            be = BandingEstimator()
+            print(f"Reading '{args.infile}'...")
+            be.set_file_input(args.infile)
+            print("Using the JTT model.")
+            print("Generating rough distance estimates...")
+            msa = MSApaHMM(be.execute_jtt_model())
+            print("Done.")
+
         if args.verbose:
             n = len(msa.taxa())
             print(f'Input MSA has {n} taxa.', file=sys.stderr)
@@ -140,11 +174,15 @@ def main():
                                   verbose=verbosity)
         print(t)
     except AssertionError:
-        sys.exit(f'A bug has occured. Please report an issue on http://github.com/arvestad/dnctree, and include sample data.')
+        sys.exit(f'A bug has occured. Please report an issue on '
+                 f'http://github.com/arvestad/dnctree, and include sample data.')
     except KeyboardInterrupt:
         sys.exit()
     except Exception as e:
         print('Error in dnctree:', e, file=sys.stderr)
-        import traceback
         traceback.print_exc()
         sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()

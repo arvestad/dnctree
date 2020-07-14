@@ -9,6 +9,7 @@ _delta = 0.0001
 _maxiters = 50
 _maxdistance = 10
 
+
 def kimura_distance(N):
     '''
     This method is not tied to a rate matrix. It is basically a classic
@@ -24,7 +25,6 @@ def kimura_distance(N):
         adjusted = 0.854    # Safe value for the logarithm
     d = - math.log(1-adjusted)
     return d
-
 
 
 def log_likelihood_at_t(model, N, t):
@@ -46,6 +46,7 @@ def log_likelihood_at_t(model, N, t):
             return 0.0
         else:
             return 1.0
+
 
 def ml_distance_estimate(model, N, start_dist=None):
     '''
@@ -159,7 +160,6 @@ def likelihood_derivative_at_t(model, N, t):
 
     likelihood_derivative = np.sum(np.divide(np.multiply(N, direction), P_t))
     return likelihood_derivative
-
 
 
 def __poisson_distance(t1, t2, s1, s2, supress_warnings=False):
