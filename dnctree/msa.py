@@ -6,11 +6,12 @@ from Bio.Seq import Seq
 import alv.alignment
 import itertools as it
 import numpy as np
+import sys
 
 from dnctree import pahmm_available
 import dnctree.exceptions as dnc
 if pahmm_available():
-    from pahmm import Sequences
+    from pahmm import Sequences as PahmmSequences, BandingEstimator
 
 
 class MSA:
@@ -124,19 +125,40 @@ class MSA:
         We cannot calculate distances using the MSA-class.
         Do not call this method!
         """
-        raise Exception("Could not retrieve distance. (MSA.can_retrieve_distances() == False)")
+        raise Exception("Bug! Could not retrieve distance. (MSA.can_retrieve_distances() == False)")
 
 
 class MSApaHMM:
     """
-    Storing multiple sequence alignments.
+    Storing unaligned sequence data using the PAHMM module.
+    The clas name is due to the related MSA class!
 
     :param sequence_type can be 'aa' (Amino-acids) or 'dna' (Nucleotides)
     """
-    def __init__(self, sequences: Sequences, sequence_type='aa'):
+    def __init__(self, sequences: PahmmSequences, sequence_type='aa'):
         self.type = sequence_type
         self._sequences = sequences
         self._taxa = list(map(self._sequences.get_seq_name, range(len(self._sequences))))
+
+
+    @classmethod
+    def from_file(cls, filename, model, verbosity=[]):
+        '''
+        Instantiate a holder for sequence data in the PAHMM module from the given filename.
+        '''
+        be = BandingEstimator()
+        if verbosity:
+            print('Using paHMM for distance estimation. Note: accepts only unaligned sequences.')
+            print(f"Reading '{filename}'...", file=sys.stderr)
+        be.set_file_input(filename)
+
+        if verbosity:
+            print(f"Using {model} as model. Estimating parameters and rough pairwise distances.", file=sys.stderr)
+
+        seq_data = cls(be.execute_wag_model())
+        if verbosity:
+            print("paHMM initialization done.", file=sys.stderr)
+        return seq_data
 
     def taxa(self):
         return self._taxa
