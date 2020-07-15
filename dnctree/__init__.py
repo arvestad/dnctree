@@ -14,7 +14,7 @@ from dnctree.distances import ml_distance_estimate
 dna_models = ['HKY', 'JC']
 
 
-def divide_n_conquer_tree(msa, model_name=None, distance_fcn=None, max_n_attempts=100, max_clade_size=0.5,
+def divide_n_conquer_tree(msa, model_name=None, max_n_attempts=100, max_clade_size=0.5,
                           base_case_size=100, first_triple=None, verbose=False):
     '''
     Input: A BioPython MSA object (for the input alignment), and a function of three
@@ -23,8 +23,6 @@ def divide_n_conquer_tree(msa, model_name=None, distance_fcn=None, max_n_attempt
     Returns: a tree as a Newick-formatted string.
 
     Parameters:
-    distance_fcn:   A function that takes a square NumPy matrix of pairwise column counts (i.e.,
-                    contains the number of different replacements/substitutions.
     max_n_attempts: The number of times we try to find a suitable taxa triple to recurse on.
     max_clade_size: The fraction of the taxa that are required before deciding we are happy
                     with a triple. We require that the largest subproblem (clade) has at most this fraction of taxa.
