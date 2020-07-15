@@ -163,11 +163,7 @@ class PartialDistanceMatrix:
     def _compute_distance(self, t1, t2):
         '''
         Return the estimated distance between the sequences of the two taxa.
-        As a first rough attempt, we just use Poisson distance.
         '''
-        # s1 = self.msa[t1].seq
-        # s2 = self.msa[t2].seq
-
         if self.msa.can_retrieve_distances():
             return self.msa.distance(t1, t2)
 
@@ -185,7 +181,6 @@ class PartialDistanceMatrix:
             return self._maximal_distance
 
         distance = self._distance_function(N)
-#        print(f'{t1}\t{t2}\t{distance}', file=sys.stderr)
         return distance
 
 
