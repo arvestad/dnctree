@@ -9,12 +9,17 @@ from dnctree import divide_n_conquer_tree, choose_distance_function, pahmm_avail
 from dnctree.msa import MSA, MSApaHMM
 from dnctree.algtesting import run_alg_testing
 
+if pahmm_available():
+    from pahmm import PAHMMError
+
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
 aa_default_model = aa_models[0]
+pahmm_aa_models = ['WAG', 'LG', 'JTT']
+
 dna_models =['JC', 'K2P']
 dna_default_model = dna_models[0]
-
+pahmm_dna_models = ['GTR', 'HKY85']
 
 def cmd_line_args():
     ap = argparse.ArgumentParser(description='Divide-and-conquer phylogenetic distance-based tree inference.')
@@ -29,8 +34,10 @@ def cmd_line_args():
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. "
                          "Be specific if the file is not recognized automatically. Default: %(default)s")
-    ap.add_argument('--pahmm', action='store_true',
-                    help='Use paHMM library to calculate distances.')
+    ap.add_argument('--pahmm', metavar='pahmm_model', choices=pahmm_aa_models+pahmm_dna_models,
+                    help='Use paHMM library to calculate distances using one of the given models.'
+                    'Note that paHMM implements a different set of models. Model parameters for'
+                    'the DNA models, HKY85 and GTR, are inferred.')
 
     info = ap.add_argument_group('Diagnostic output')
     info.add_argument('-i', '--info', action='store_true',
@@ -107,33 +114,6 @@ def main():
             print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
             sys.exit(0)
 
-        if args.pahmm and not pahmm_available():
-            print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
-            print("To install pahmm, run 'python3 -m pip install pahmm'.", file=sys.stderr)
-            sys.exit(1)
-
-        if args.format == 'guess':
-            inputformat = guess_format(args.infile)
-        else:
-            inputformat = args.format
-
-        if not args.pahmm:
-            alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
-        else:
-            alv_msa = None
-
-    except KeyboardInterrupt:
-        sys.exit()
-    except FileNotFoundError:
-        sys.exit(f'Could not read file "{args.infile}"')
-    except AlvPossibleFormatError:
-        sys.exit(f'File "{args.infile}" does not look like an alignment')
-    except Exception as e:
-        print('Error when reading data in dnctree:', e, file=sys.stderr)
-        traceback.print_exc()
-        sys.exit(1)
-
-    try:
         verbosity = []
         if args.info:
             verbosity.append('info')
@@ -142,31 +122,47 @@ def main():
         if args.supress_warnings:
             verbosity.append('supress_warnings')
 
-        if not args.pahmm:
-            msa = MSA(alv_msa)
-        else:
-            from pahmm import BandingEstimator
-            # Using pahmm
-            be = BandingEstimator()
-            print(f"Reading '{args.infile}'...")
-            be.set_file_input(args.infile)
-            print("Using the JTT model.")
-            print("Generating rough distance estimates...")
-            msa = MSApaHMM(be.execute_jtt_model())
-            print("Done.")
-
-        if args.verbose:
-            n = len(msa.taxa())
-            print(f'Input MSA has {n} taxa.', file=sys.stderr)
     except KeyboardInterrupt:
         sys.exit()
 
     try:
-        model_name = None
-        if args.model != 'guess':
-            model_name = args.model
+        if args.pahmm:
+            if not pahmm_available():
+                print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
+                print("To install pahmm, run 'python3 -m pip install pahmm'.", file=sys.stderr)
+                sys.exit(1)
+            model=args.pahmm
+            model_name = args.pahmm
+            seq_data = MSApaHMM.from_file(args.infile, model, verbosity)
+        else:
+            if args.format == 'guess':
+                inputformat = guess_format(args.infile)
+            else:
+                inputformat = args.format
+            alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+            seq_data = MSA(alv_msa)
+            model_name = None
+            if args.model != 'guess':
+                model_name = args.model
+    except KeyboardInterrupt:
+        sys.exit()
+    except FileNotFoundError:
+        sys.exit(f'Could not read file "{args.infile}"')
+    except AlvPossibleFormatError:
+        sys.exit(f'File "{args.infile}" does not look like an alignment')
+    except PAHMMError as e:
+        sys.exit(f'Error from paHMM: {e}')
+    except Exception as e:
+        print('Error when reading data in dnctree:', e, file=sys.stderr)
+        traceback.print_exc()
+        sys.exit(1)
 
-        t = divide_n_conquer_tree(msa, model_name=model_name,
+    try:
+        if args.verbose:
+            n = len(seq_data.taxa())
+            print(f'Input has {n} taxa.', file=sys.stderr)
+
+        t = divide_n_conquer_tree(seq_data, model_name=model_name,
                                   max_n_attempts=args.max_n_attempts,
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
