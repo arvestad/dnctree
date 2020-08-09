@@ -1,5 +1,5 @@
 import unittest
-from dnctree.dnctree import dnc_neighborjoining, nj_selection_function
+from dnctree import dnc_neighborjoining, nj_selection_function
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import kimura_distance

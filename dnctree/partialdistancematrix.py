@@ -165,7 +165,9 @@ class PartialDistanceMatrix:
         Return the estimated distance between the sequences of the two taxa.
         '''
         if self.msa.can_retrieve_distances():
-            return self.msa.distance(t1, t2)
+            d =  self.msa.distance(t1, t2)
+#            print('dnctree:', d)
+            return d
 
         supress_warnings = 'supress_warnings' in self.verbose
 
@@ -184,11 +186,17 @@ class PartialDistanceMatrix:
         return distance
 
 
-    def _print_computational_savings(self):
+    def _computational_savings(self):
+        actual_work, fraction_work, n = self.estimate_computational_savings()
+        normal_work = (n * (n-1)) // 2 # Full distance matrix
+        return f'Computed {actual_work} distances for {n} taxa. A full distance matrix would contain {normal_work} pairs. Savings: {100 - 100 * fraction_work:.3} %'
+
+    def estimate_computational_savings(self):
         n = len(self.taxa)
-        normal_work = int(n * (n-1) / 2) # Full distance matrix
         actual_work = self._n_distances_computed
-        print(f'[Computed {actual_work} distances for {n} taxa. A full distance matrix would contain {normal_work} pairs. Savings: {100 - 100 * actual_work/normal_work:.3} %]', file=sys.stderr)
+        normal_work = (n * (n-1)) // 2 # Full distance matrix
+        fraction_work = actual_work / normal_work
+        return actual_work, fraction_work, n
 
     def print_progress(self):
         '''

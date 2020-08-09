@@ -33,14 +33,22 @@ def divide_n_conquer_tree(msa, model_name=None, max_n_attempts=100, max_clade_si
     assert max_clade_size >= 0.5  # Pointless to try smaller values
     assert max_n_attempts >= 1    # Truly a minimum
 
-    distance_fcn = choose_distance_function(msa.type, model_name)
+    distance_fcn, chosen_model_name = choose_distance_function(msa.type, model_name)
 
     dm = PartialDistanceMatrix(msa, distance_fcn, verbose=verbose)                 # We will gradually add distances to this "matrix"
 
     t = dnc_tree(dm, msa.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
+    actual_work, fraction_work, n = dm.estimate_computational_savings()
+    comment = dm._computational_savings()
     if 'info' in verbose or 'verbose' in verbose:
-        dm._print_computational_savings()
-    return t
+        print(f'[{comment}]', file=sys.stderr)
+    aux_info = {'distances-computed': actual_work,
+                'fraction-computed-distances': round(fraction_work,3),
+                'n-taxa': n,
+                'comment': comment,
+                'model-name': chosen_model_name
+    }
+    return t, aux_info
 
 
 def testing_divide_n_conquer(model, max_n_attempts=100, max_clade_size=0.5, base_case_size=100, first_triple=None, verbose=False):
@@ -78,7 +86,7 @@ def choose_distance_function(seqtype, model_name=None):
                 chosen_model = model_name
         model = RateMatrix.instantiate(chosen_model)
         distance_fcn = lambda N: ml_distance_estimate(model, N) # XXX Correct call?
-        return distance_fcn
+        return distance_fcn, chosen_model
     elif seqtype == 'dna':
         raise Exception('DNA models not yet implemented, sorry.')
     else:

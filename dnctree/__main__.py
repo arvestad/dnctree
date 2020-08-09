@@ -1,6 +1,8 @@
 import argparse
+import json
 import os
 import sys
+import time
 import traceback
 
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
@@ -8,6 +10,7 @@ from alv.io import guess_format, read_alignment
 from dnctree import divide_n_conquer_tree, choose_distance_function, pahmm_available
 from dnctree.msa import MSA, MSApaHMM
 from dnctree.algtesting import run_alg_testing
+from dnctree.version import __version__ as dnctree_version
 
 if pahmm_available():
     from pahmm import PAHMMError
@@ -38,6 +41,8 @@ def cmd_line_args():
                     help='Use paHMM library to calculate distances using one of the given models.'
                     'Note that paHMM implements a different set of models. Model parameters for'
                     'the DNA models, HKY85 and GTR, are inferred.')
+    ap.add_argument('-j', '--json-output', action='store_true',
+                    help='Output in JSON format, as an object with fields. Key object is "tree".')
 
     info = ap.add_argument_group('Diagnostic output')
     info.add_argument('-i', '--info', action='store_true',
@@ -48,6 +53,8 @@ def cmd_line_args():
     info.add_argument('-w', '--supress-warnings', action='store_true',
                       help='Do not warn about sequence pairs not sharing columns '
                            'or sequences being completely different.')
+
+    info.add_argument('-v', '--version', action='version', version = f'dnctree {dnctree_version}')
 
     group = ap.add_argument_group('Expert options', 'You need to understand the dnctree '
                                                     'algorithm to tweak these options in a meaningful way.')
@@ -126,6 +133,7 @@ def main():
         sys.exit()
 
     try:
+        start_time = time.perf_counter()
         if args.pahmm:
             if not pahmm_available():
                 print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
@@ -162,13 +170,19 @@ def main():
             n = len(seq_data.taxa())
             print(f'Input has {n} taxa.', file=sys.stderr)
 
-        t = divide_n_conquer_tree(seq_data, model_name=model_name,
+        t, aux_info = divide_n_conquer_tree(seq_data, model_name=model_name,
                                   max_n_attempts=args.max_n_attempts,
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
                                   first_triple=args.first_triple,
                                   verbose=verbosity)
-        print(t)
+
+        stop_time = time.perf_counter()
+        if args.json_output:
+            aux_info['computing-time'] = stop_time - start_time
+            print(make_json_string(t, aux_info, args))
+        else:
+            print(t)
     except AssertionError:
         sys.exit(f'A bug has occured. Please report an issue on '
                  f'http://github.com/arvestad/dnctree, and include sample data.')
@@ -178,6 +192,20 @@ def main():
         print('Error in dnctree:', e, file=sys.stderr)
         traceback.print_exc()
         sys.exit(2)
+
+
+def make_json_string(t, aux_info, args):
+    info = dict()
+    info['version'] = f'dnctree {dnctree_version}'
+    info['tree'] = str(t)
+    info['infile'] = args.infile
+    info['aligned'] = not(args.pahmm)
+    info['base-case-size'] = args.base_case_size
+
+    for key, val in aux_info.items():
+        info[key] = val
+    return json.dumps(info, indent=4)
+
 
 
 if __name__ == "__main__":

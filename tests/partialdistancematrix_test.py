@@ -1,7 +1,7 @@
 import unittest
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree.dnctree import choose_distance_function, divide_n_conquer_tree
+from dnctree import choose_distance_function, divide_n_conquer_tree
 from dnctree.distances import kimura_distance
 import dnctree.exceptions as dncexc
 

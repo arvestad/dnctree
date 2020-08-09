@@ -148,14 +148,15 @@ class MSApaHMM:
         '''
         be = BandingEstimator()
         if verbosity:
-            print('Using paHMM for distance estimation. Note: accepts only unaligned sequences.')
+            print('Using paHMM for distance estimation. Note: accepts only unaligned sequences.', file=sys.stderr)
             print(f"Reading '{filename}'...", file=sys.stderr)
         be.set_file_input(filename)
 
         if verbosity:
             print(f"Using {model} as model. Estimating parameters and rough pairwise distances.", file=sys.stderr)
 
-        seq_data = cls(be.execute_wag_model())
+#        seq_data = cls(be.execute_wag_model())
+        seq_data = cls(be.apply_model(model), sequence_type='aa')
         if verbosity:
             print("paHMM initialization done.", file=sys.stderr)
         return seq_data
