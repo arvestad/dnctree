@@ -15,7 +15,7 @@ dna_models = ['HKY', 'JC']
 
 
 def divide_n_conquer_tree(msa, model_name=None, max_n_attempts=100, max_clade_size=0.5,
-                          base_case_size=100, first_triple=None, verbose=False):
+                          base_case_size=100, first_triple=None, verbose=[]):
     '''
     Input: A BioPython MSA object (for the input alignment), and a function of three
            args (two taxa names and a NumPy 20x20 matrix with amino acid counts
@@ -51,7 +51,7 @@ def divide_n_conquer_tree(msa, model_name=None, max_n_attempts=100, max_clade_si
     return t, aux_info
 
 
-def testing_divide_n_conquer(model, max_n_attempts=100, max_clade_size=0.5, base_case_size=100, first_triple=None, verbose=False):
+def testing_divide_n_conquer(model, max_n_attempts=100, max_clade_size=0.5, base_case_size=100, first_triple=None, verbose=[]):
     '''
     The purpose with this function is to be able to test the algorithm and
     see how sensitive it is to errors in the distance estimation.
@@ -93,7 +93,7 @@ def choose_distance_function(seqtype, model_name=None):
         raise Exception(f'Not a valid sequence type: {seqtype}.')
 
 
-def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=False):
+def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=[]):
     if len(taxa) <= base_case_size:
         if 'verbose' in verbose:
             print(f'Full NJ on {len(taxa)} taxa:', file=sys.stderr, flush=True)
@@ -126,7 +126,7 @@ def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_tri
         return t_connected
 
 
-def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose):
+def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose=[]):
     '''
     Sample three taxa and see if they split the set of taxa not too unevenly. Repeat until the largest
     clade (out of three) is small enough or we have used our max number of attempts.
@@ -212,7 +212,7 @@ def nj_selection_function(dm, current_leaves):
     return best_so_far
 
 
-def dnc_neighborjoining(dm, taxa, verbose=False):
+def dnc_neighborjoining(dm, taxa, verbose=[]):
     '''
     An implementation of NJ meant to compute base cases in dnctree.
 

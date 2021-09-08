@@ -12,7 +12,7 @@ class PartialDistanceMatrix:
     they are asked for. If pahmm is set to True, then distances are computed using
     the pahmm library.
     '''
-    def __init__(self, msa, distance_fcn, verbose=False):
+    def __init__(self, msa, distance_fcn, verbose=[]):
         '''
         The constructor initializes the distance matrix as a dict with dicts so that
         we can have distances as self.dm[t1][t2] elements. If no distance has been estimated to

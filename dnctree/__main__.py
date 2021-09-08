@@ -8,12 +8,15 @@ import traceback
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
 from dnctree import divide_n_conquer_tree, choose_distance_function, pahmm_available
-from dnctree.msa import MSA, MSApaHMM
 from dnctree.algtesting import run_alg_testing
 from dnctree.version import __version__ as dnctree_version
 
 if pahmm_available():
+    from dnctree.msa import MSA, MSApaHMM
     from pahmm import PAHMMError
+else:
+    from dnctree.msa import MSA 
+
 
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
@@ -112,15 +115,6 @@ def main():
         args = cmd_line_args()
         check_args(args)
 
-        if 'DNCTREE_TESTING' in os.environ:
-            if args.alg_testing:
-                run_alg_testing(args)
-                sys.exit()
-
-        if args.secret_developer_options:
-            print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
-            sys.exit(0)
-
         verbosity = []
         if args.info:
             verbosity.append('info')
@@ -128,6 +122,15 @@ def main():
             verbosity.append('verbose')
         if args.supress_warnings:
             verbosity.append('supress_warnings')
+
+        if 'DNCTREE_TESTING' in os.environ:
+            if args.alg_testing:
+                run_alg_testing(args, verbosity)
+                sys.exit()
+
+        if args.secret_developer_options:
+            print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
+            sys.exit(0)
 
     except KeyboardInterrupt:
         sys.exit()

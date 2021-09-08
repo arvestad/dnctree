@@ -8,7 +8,7 @@ from dnctree import testing_divide_n_conquer
 from tree_matching_distance import distance as matching_distance
 
 
-def run_alg_testing(args):
+def run_alg_testing(args, verbosity=[]):
     dt = TestingPartialDistanceMatrix(args.infile, args.alg_testing)
     rf_dnc_list = []
     tm_dnc_list = []
@@ -18,7 +18,7 @@ def run_alg_testing(args):
                                          max_clade_size=args.max_clade_size,
                                          base_case_size=base_case_size,
                                          first_triple=args.first_triple,
-                                         verbose=args.verbose)
+                                         verbose=verbosity)
         dnc_estimated_tree = ete3.Tree(str(t_dnc));
 
         rf_dnc, rf_dnc_max, *x = dnc_estimated_tree.robinson_foulds(dt._dt, unrooted_trees=True)
@@ -40,7 +40,7 @@ def run_alg_testing(args):
                                         max_clade_size=args.max_clade_size,
                                         base_case_size=dt.n_taxa, # Note: always do the basecase!
                                         first_triple=args.first_triple,
-                                        verbose=args.verbose)
+                                        verbose=verbosity)
         nj_estimated_tree = ete3.Tree(str(t_nj))
         rf_nj, rf_nj_max, *y = nj_estimated_tree.robinson_foulds(dt._dt, unrooted_trees=True)
         tm_nj = matching_distance(dt._dt, nj_estimated_tree)
@@ -53,7 +53,7 @@ def run_alg_testing(args):
 
 
 class TestingPartialDistanceMatrix(PartialDistanceMatrix):
-    def __init__(self, treefile, error_parameter, verbose=False):
+    def __init__(self, treefile, error_parameter, verbose=[]):
         self._dt = ete3.Tree(treefile)
         self._dm = dict()
         self._true_dm = dict()
