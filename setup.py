@@ -21,8 +21,8 @@ if sys.version_info.major < 3:
              'Did you run pip install dnctree?\n'
              'Try \'pip3 install dnctree\'')
 
-elif sys.version_info.minor < 2:
-    sys.exit('\nSorry, Python < 3.2 is not supported\n')
+elif sys.version_info.minor < 6:
+    sys.exit('\nSorry, Python < 3.6 is not supported\n')
 
 requirements = [
     'alv>=1.5',
