@@ -1,4 +1,4 @@
-from Bio.Alphabet import ProteinAlphabet, AlphabetEncoder, Gapped
+#from Bio.Alphabet import ProteinAlphabet, AlphabetEncoder, Gapped
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -52,7 +52,7 @@ class MSA:
         Instantiate an MSA from the list of sequences.
         This method is primarily for testing.
         '''
-        biopy_msa = MultipleSeqAlignment([], Gapped(ProteinAlphabet(), "-"))
+        biopy_msa = MultipleSeqAlignment([])
         for i, seq in enumerate(seqs):
             acc = f'seq{i}'
             biopy_msa.add_sequence(acc, seq)
