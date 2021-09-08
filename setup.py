@@ -28,7 +28,8 @@ requirements = [
     'alv>=1.5',
     'modelmatcher>=1.1.3',
     'biopython>=1.70',
-    'ete3>=3.1.1'
+    'ete3>=3.1.1',
+    'tree_matching_distance'
 ]
 
 setuptools.setup(
