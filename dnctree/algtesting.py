@@ -91,38 +91,3 @@ class TestingPartialDistanceMatrix(PartialDistanceMatrix):
 #            self._seen[t1][t2] = True
 #            self._seen[t2][t1] = True
         return self._dm[t1][t2]
-
-
-    # def quartet_test(self, l1, l2, l3, x):
-    #     '''
-    #     Return the leaf (l1, l2, or l3) of which leaf a quartet test suggests x belongs to.
-    #     '''
-    #     def q_diff(a, b, c, d):
-    #         return self.get(a, c) + self.get(b, d) - self.get(a, b) - self.get(c, d)
-
-    #     def true_q_diff(a, b, c, d):
-    #         return self._true_dm[a][c] + self._true_dm[b][d] - self._true_dm[a][b] - self._true_dm[c][d]
-
-
-    #     # First look at noisy distances
-    #     options = [(l1, q_diff(x, l1, l2, l3)),
-    #                (l2, q_diff(x, l2, l1, l3)),
-    #                (l3, q_diff(x, l3, l1, l2)),]
-    #     choice = max(options, key = lambda pair: pair[1])
-
-        # Now use the ideal distances, but give up on internal vertices because not updating their distances
-        # try:
-        #     true_options = [(l1, true_q_diff(x, l1, l2, l3)),
-        #                     (l2, true_q_diff(x, l2, l1, l3)),
-        #                     (l3, true_q_diff(x, l3, l1, l2)),]
-        #     true_choice = max(true_options, key = lambda pair: pair[1])
-
-        #     if choice[0] != true_choice[0]:
-        #         print(f'{x:4}\t     choice: {choice} options: {options}\n    \ttrue choice: {true_choice} from {true_options}\n', file=sys.stderr)
-        #         for a, b in itertools.combinations([x, l1, l2, l3], 2):
-        #             print(f'    \tD({a},{b})={self.get(a,b):.3}', file=sys.stderr)
-        #         print(file=sys.stderr)
-        # except:
-        #     print(f'Not available for {x}')
-
-        return choice[0]
