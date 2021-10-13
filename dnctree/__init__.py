@@ -93,33 +93,49 @@ def choose_distance_function(seqtype, model_name=None):
         raise Exception(f'Not a valid sequence type: {seqtype}.')
 
 
-def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=[]):
+def dnc_nj_tree(dm, taxa, base_case_size, verbosity):
+    '''
+    Use NJ on a set of taxa > 4 to find out how to recurse.
+    '''
     if len(taxa) <= base_case_size:
-        if 'verbose' in verbose:
+        if 'verbose' in verbosity:
             print(f'Full NJ on {len(taxa)} taxa:', file=sys.stderr, flush=True)
             print(_taxa_string_helper(taxa, 2), file=sys.stderr, flush=True)
-        t = dnc_neighborjoining(dm, taxa, verbose)
+        t = dnc_neighborjoining(dm, taxa, verbosity)
         return t
     else:
-        if first_triple is not None:
+        taxa_subset = random.sample(taxa, base_case_size)
+        t = dnc_neighborjoining(dm, taxa_subset, verbosity)
+        witnesses = compute_witnesses(dm, taxa_subset, taxa)
+
+
+def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, partition_method, verbosity=[]):
+    if len(taxa) <= base_case_size:
+        if 'verbose' in verbosity:
+            print(f'Full NJ on {len(taxa)} taxa:', file=sys.stderr, flush=True)
+            print(_taxa_string_helper(taxa, 2), file=sys.stderr, flush=True)
+        t = dnc_neighborjoining(dm, taxa, verbosity)
+        return t
+    else:
+        if type(partition_method) == list and len(partition_method) == 3:
             t = first_triple
             c = clade_sort_taxa(dm, taxa, t[0], t[1], t[2])
         else:
-            t, c = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose)
+            t, c = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbosity)
         # t[i] are 3 taxa ids
         # c[i] are three lists of taxa representing what we think should be become a clade (c[i] together with t[i]).
 
         # Add an inner vertex v that connects c1, c2, and c3.
         v = dm.create_central_vertex(t, c)
-        if verbose:
+        if verbosity:
             print(f'Recursing on subproblems induced by {t[0]}, {t[1]}, and {t[2]}', file=sys.stderr)
 
         # Recurse on cx+tx+v, for x in {1,2,3}.
         subtrees = [None, None, None]
         for i in range(3):
             c[i].append(v)      # Ensure that the central vertex participates as a representative of the other clades
-            subtrees[i] = dnc_tree(dm, c[i], max_n_attempts, max_clade_size, base_case_size, None, verbose)
-            if verbose:
+            subtrees[i] = dnc_tree(dm, c[i], max_n_attempts, max_clade_size, base_case_size, None, verbosity)
+            if verbosity:
                 dm.print_progress()
 #            print(f't{i}:', subtrees[i], file=sys.stderr)
         t_connected = connect_the_trees(subtrees, v)
@@ -192,8 +208,18 @@ def connect_the_trees(subtrees, connecting_node):
 
 
 def nj_selection_function(dm, current_leaves):
+    '''
+    Use the NJ selection function (often known as S or Q) to find a suitable
+    "cherry" (a pair of nodes to join), restricted to the vertices enumerated
+    in "current_leaves".
 
+    Returns a pair of vertices from "current_leaves".
+    '''
     def sum_distances(a):
+        '''
+        Return the rowsum from "dm" for "a" restricted to "current_leaves" and
+        not including the diagonal element.
+        '''
         sum_for_a = 0
         for b in current_leaves:
             if a != b:
