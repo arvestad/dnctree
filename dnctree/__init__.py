@@ -17,7 +17,7 @@ dna_models = ['HKY', 'JC']
 def divide_n_conquer_tree(msa, model_name=None, distance_fcn=None, max_n_attempts=100, max_clade_size=0.5,
                           base_case_size=100, first_triple=None, verbose=False):
     '''
-    Input: A BioPython MSA object (for the input alignment), and a function of three
+    Input: A BioPython (or PaHmm) MSA object (for the input alignment), and a function of three
            args (two taxa names and a NumPy 20x20 matrix with amino acid counts
            for estimating evolutionary distance.
     Returns: a tree as a Newick-formatted string.
@@ -195,10 +195,14 @@ def nj_selection_function(dm, current_leaves):
         return sum_for_a
 
     n_minus_2 = len(current_leaves) - 2
-    Q_ij_min = n_minus_2 * dm.get(current_leaves[0], current_leaves[1]) # Arbitrary but safe starting value that won't be chosen.
+    #Q_ij_min = n_minus_2 * dm.get(current_leaves[0], current_leaves[1]) # Arbitrary but safe starting value that won't be chosen.
+    #FIXME: Added by Mazen:
+    Q_ij_min = round(n_minus_2 * dm.get(current_leaves[0], current_leaves[1]), 6)
     best_so_far = current_leaves[0], current_leaves[1]
     for x, y in itertools.combinations(current_leaves, 2):
-        Q_ij = n_minus_2 * dm.get(x, y) - sum_distances(x) - sum_distances(y)
+        #Q_ij = n_minus_2 * dm.get(x, y) - sum_distances(x) - sum_distances(y)
+        # FIXME: Added by Mazen:
+        Q_ij = round(n_minus_2 * dm.get(x, y) - sum_distances(x) - sum_distances(y), 6)
         if Q_ij < Q_ij_min:
             Q_ij_min = Q_ij
             best_so_far = x, y

@@ -1,5 +1,6 @@
 import setuptools
 import sys
+from dnctree.version import __version__
 
 with open("README.md", "r") as fh:
     at_top = True
@@ -10,10 +11,6 @@ with open("README.md", "r") as fh:
         else:
             at_top = False      # Now starts the "real" README.md
         long_description += line
-
-
-with open('dnctree/version.py') as fh:
-    exec(fh.read())
 
 if sys.version_info.major < 3:
     sys.exit('\n'
@@ -47,10 +44,10 @@ setuptools.setup(
         'console_scripts': ['dnctree = dnctree.main:main']
         },
     install_requires=requirements,
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
-    ),
+    ],
 )

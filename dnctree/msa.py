@@ -1,10 +1,11 @@
-from Bio.Alphabet import ProteinAlphabet, AlphabetEncoder, Gapped
+# from Bio.Alphabet import ProteinAlphabet, AlphabetEncoder, Gapped
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
 import alv.alignment
 import itertools as it
+from typing import List
 import numpy as np
 
 from dnctree import pahmm_available
@@ -51,10 +52,12 @@ class MSA:
         Instantiate an MSA from the list of sequences.
         This method is primarily for testing.
         '''
-        biopy_msa = MultipleSeqAlignment([], Gapped(ProteinAlphabet(), "-"))
+        # biopy_msa = MultipleSeqAlignment([], Gapped(ProteinAlphabet(), "-"))
+        # TODO: How do we specify that we want "-"-gaps and that these are proteins?
+        biopy_msa = MultipleSeqAlignment([])
         for i, seq in enumerate(seqs):
             acc = f'seq{i}'
-            biopy_msa.add_sequence(acc, seq)
+            biopy_msa.append(SeqRecord(seq, id=acc))
         return cls(alv.alignment.AminoAcidAlignment(biopy_msa))         # Instantiate
 
     @classmethod
@@ -151,7 +154,7 @@ class MSApaHMM:
         """
         Return a fake SeqRecord. We don't want to construct a SeqRecord from a real sequence
         because that would involve converting the sequence to a Python-string. That's an O(n) operation
-        and that's not acceptable. Distance calculations are left entirely to paHMM anyway.
+        and that's not acceptable. Distance calculations are left entirely to PaHMM anyway.
         """
         return SeqRecord(Seq(""))
 
@@ -166,3 +169,29 @@ class MSApaHMM:
         """Retrieve the distance between two sequences.
         """
         return self.sequences().get_distance_from_names(t1, t2)
+
+
+class MSAInput:
+    def __init__(self, taxa: List[str], distances: List[float], sequence_type='aa'):
+        self.type = sequence_type
+        self._distances = distances
+        self._taxa = {t: i for i, t in enumerate(taxa)}
+        self._taxa_names = taxa
+
+    def taxa(self):
+        return self._taxa_names
+
+    @staticmethod
+    def can_retrieve_distances() -> bool:
+        """Checks if distances are readily available and do not have to be
+        computed manually.
+        """
+        return True
+
+    def distance(self, t1: str, t2: str) -> float:
+        """Retrieve the distance between two sequences.
+        """
+        i1 = self._taxa[t1]
+        i2 = self._taxa[t2]
+        return self._distances[len(self._taxa)*i1 + i2]
+

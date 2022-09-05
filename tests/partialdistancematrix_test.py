@@ -1,7 +1,7 @@
 import unittest
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree.dnctree import choose_distance_function
+from dnctree import choose_distance_function
 from dnctree.distances import kimura_distance
 
 class Test_partialdistancematrix(unittest.TestCase):

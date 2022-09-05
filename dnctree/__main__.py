@@ -2,13 +2,14 @@ import argparse
 import os
 import sys
 import traceback
+from pathlib import Path
 
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
 from dnctree import divide_n_conquer_tree, choose_distance_function, pahmm_available
-from dnctree.msa import MSA, MSApaHMM
+from dnctree.msa import MSA, MSApaHMM, MSAInput
 from dnctree.algtesting import run_alg_testing
-
+from dnctree.distance_file_io import read_taxa, read_distances
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
 aa_default_model = aa_models[0]
@@ -31,6 +32,8 @@ def cmd_line_args():
                          "Be specific if the file is not recognized automatically. Default: %(default)s")
     ap.add_argument('--pahmm', action='store_true',
                     help='Use paHMM library to calculate distances.')
+    ap.add_argument('--distance-file', type=Path,
+                    help='Use pre-calculated distances to generate a tree.')
 
     info = ap.add_argument_group('Diagnostic output')
     info.add_argument('-i', '--info', action='store_true',
@@ -143,7 +146,11 @@ def main():
             verbosity.append('supress_warnings')
 
         if not args.pahmm:
-            msa = MSA(alv_msa)
+            if not args.distance_file:
+                msa = MSA(alv_msa)
+            else:
+                with open(args.distance_file, "r") as distance_file:
+                    msa = MSAInput(read_taxa(distance_file), read_distances(distance_file))
         else:
             from pahmm import BandingEstimator
             # Using pahmm
