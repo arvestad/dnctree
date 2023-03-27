@@ -2,10 +2,9 @@ import itertools
 import random
 import sys
 import textwrap
-import importlib.util
 
 from modelmatcher import RateMatrix
-
+from dnctree.msa import MSA, MSApaHMM
 from dnctree.tree import Tree
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import ml_distance_estimate
@@ -14,11 +13,11 @@ from dnctree.distances import ml_distance_estimate
 dna_models = ['HKY', 'JC']
 
 
-def divide_n_conquer_tree(msa, model_name=None, max_n_attempts=100, max_clade_size=0.5,
+def divide_n_conquer_tree(seq_data, model_name=None, max_n_attempts=100, max_clade_size=0.5,
                           base_case_size=100, first_triple=None, verbose=[]):
     '''
-    Input: A BioPython MSA object (for the input alignment), and a function of three
-           args (two taxa names and a NumPy 20x20 matrix with amino acid counts
+    Input: An object with sequence data (for the input alignment or unaligned if using PaHMM), 
+           and a function of three args (two taxa names and a NumPy 20x20 matrix with amino acid counts
            for estimating evolutionary distance.
     Returns: a tree as a Newick-formatted string.
 
@@ -33,11 +32,18 @@ def divide_n_conquer_tree(msa, model_name=None, max_n_attempts=100, max_clade_si
     assert max_clade_size >= 0.5  # Pointless to try smaller values
     assert max_n_attempts >= 1    # Truly a minimum
 
-    distance_fcn, chosen_model_name = choose_distance_function(msa.type, model_name)
+    if isinstance(seq_data, MSA):
+        distance_fcn, chosen_model_name = choose_distance_function(seq_data.type, model_name)
+        data_description = f'{seq_data.type.upper()} alignment'
+    elif isinstance(seq_data, MSApaHMM):
+        distance_fcn = 'not_needed_strangely_enough' # Clearly a case of bad program structure. Should refactor.
+        chosen_model_name = model_name
+        data_description = f'Unaligned {seq_data.type.upper()} sequences'
 
-    dm = PartialDistanceMatrix(msa, distance_fcn, verbose=verbose)                 # We will gradually add distances to this "matrix"
 
-    t = dnc_tree(dm, msa.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
+    dm = PartialDistanceMatrix(seq_data, distance_fcn, verbose=verbose)                 # We will gradually add distances to this "matrix"
+
+    t = dnc_tree(dm, seq_data.taxa(), max_n_attempts, max_clade_size, base_case_size, first_triple, verbose)
     actual_work, fraction_work, n = dm.estimate_computational_savings()
     comment = dm._computational_savings()
     if 'info' in verbose or 'verbose' in verbose:
@@ -46,7 +52,8 @@ def divide_n_conquer_tree(msa, model_name=None, max_n_attempts=100, max_clade_si
                 'fraction-computed-distances': round(fraction_work,3),
                 'n-taxa': n,
                 'comment': comment,
-                'model-name': chosen_model_name
+                'model-name': chosen_model_name,
+                'description': data_description
     }
     return t, aux_info
 
@@ -73,7 +80,7 @@ def choose_distance_function(seqtype, model_name=None):
     Pick a model depending on sequence type and model_name.
     If the two args are not in harmony (e.g., 'dna' and 'WAG'), throw an error.
 
-    seqtype:   'aa' or 'dna'
+    seqtype:    'aa' or 'dna'
     model_name: 'WAG' or any other model implemented in the module "modelmatcher".
                 'kimura' is also an acceptable string.
     '''
@@ -88,12 +95,23 @@ def choose_distance_function(seqtype, model_name=None):
         distance_fcn = lambda N: ml_distance_estimate(model, N) # XXX Correct call?
         return distance_fcn, chosen_model
     elif seqtype == 'dna':
-        raise Exception('DNA models not yet implemented, sorry.')
+        raise dnc.UnknownModel('DNA models not yet implemented, sorry.')
     else:
-        raise Exception(f'Not a valid sequence type: {seqtype}.')
+        raise dnc.UnknownModel(f'Not a valid sequence type: {seqtype}.')
 
 
 def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_triple, verbose=[]):
+    '''
+    The core algorithm
+
+    dm:       A PartialDistanceMatrix instance, to draw distances from. Note that
+              distances are computed on-demand and "cached" with function registered
+              in this object.
+    taxa:     A list of identifiers (part of dm) to infer the tree for
+    verbose:  boolean, whether to print extra info to stderr
+
+    returns:  A Tree object.
+    '''
     if len(taxa) <= base_case_size:
         if 'verbose' in verbose:
             print(f'Full NJ on {len(taxa)} taxa:', file=sys.stderr, flush=True)
@@ -112,7 +130,8 @@ def dnc_tree(dm, taxa, max_n_attempts, max_clade_size, base_case_size, first_tri
         # Add an inner vertex v that connects c1, c2, and c3.
         v = dm.create_central_vertex(t, c)
         if verbose:
-            print(f'Recursing on subproblems induced by {t[0]}, {t[1]}, and {t[2]}', file=sys.stderr)
+            taxa_string = _taxa_string_helper([t[0], t[1],t[2]], 0)
+            print(f'Recursing on subproblems induced by {taxa_string}', file=sys.stderr)
 
         # Recurse on cx+tx+v, for x in {1,2,3}.
         subtrees = [None, None, None]
@@ -144,7 +163,8 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose=[]):
     for i in range(max_n_attempts):
         v1, v2, v3 = random.sample(taxa, 3) # Three taxa strings
         if 'verbose' in verbose:
-            print(f'Attempt: {v1}, {v2}, {v3}.', end='  ', file=sys.stderr, flush=True)
+            taxa_string = _taxa_string_helper([v1, v2, v3], 0)
+            print(f'Attempt: {taxa_string}.', end='  ', file=sys.stderr, flush=True)
         c1, c2, c3 = clade_sort_taxa(dm, taxa, v1, v2, v3) # Three groups of taxa: "clade wannabees"
         largest = max(len(c1), len(c2), len(c3)) # Out of the three found clades, which one is largest?
         if verbose:
@@ -251,8 +271,3 @@ def _taxa_string_helper(l, indent):
     s = textwrap.fill(', '.join(map(lambda t: t.decode() if isinstance(t, bytes) else t, l)), width=100 - indent)
     return textwrap.indent(s, ' ' * indent)
 
-
-def pahmm_available() -> bool:
-    """ Check if the pahmm-library is available.
-    """
-    return bool(importlib.util.find_spec("pahmm"))
