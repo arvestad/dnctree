@@ -8,8 +8,8 @@ import itertools as it
 import numpy as np
 import sys
 
-from dnctree import pahmm_available
 import dnctree.exceptions as dnc
+from dnctree.pahmm_adaptor import pahmm_available
 if pahmm_available():
     from pahmm import Sequences as PahmmSequences, BandingEstimator
 
@@ -127,65 +127,78 @@ class MSA:
         """
         raise Exception("Bug! Could not retrieve distance. (MSA.can_retrieve_distances() == False)")
 
-if pahmm_available():
- class MSApaHMM:
-     """
-     Storing unaligned sequence data using the PAHMM module.
-     The clas name is due to the related MSA class!
+if not pahmm_available():
+    class MSApaHMM:             # Dummy class
+        pass
+else:
+    class MSApaHMM:
+        """
+        Storing unaligned sequence data using the PAHMM module.
+        The clas name is due to the related MSA class!
 
-     :param sequence_type can be 'aa' (Amino-acids) or 'dna' (Nucleotides)
-     """
-     def __init__(self, sequences: PahmmSequences, sequence_type='aa'):
-         self.type = sequence_type
-         self._sequences = sequences
-         self._taxa = list(map(self._sequences.get_seq_name, range(len(self._sequences))))
+        :param sequence_type can be 'aa' (Amino-acids) or 'dna' (Nucleotides)
+        """
+        def __init__(self, sequences: PahmmSequences, sequence_type='aa'):
+            self.type = sequence_type
+            self._sequences = sequences
+            self._taxa = list(map(self._sequences.get_seq_name, range(len(self._sequences))))
 
 
-     @classmethod
-     def from_file(cls, filename, model, verbosity=[]):
-         '''
-         Instantiate a holder for sequence data in the PAHMM module from the given filename.
-         '''
-         be = BandingEstimator()
-         if verbosity:
-             print('Using paHMM for distance estimation. Note: accepts only unaligned sequences.', file=sys.stderr)
-             print(f"Reading '{filename}'...", file=sys.stderr)
-         be.set_file_input(filename)
+        @classmethod
+        def from_file(cls, filename, model, verbosity=[]):
+            '''
+            Instantiate a holder for sequence data in the PAHMM module from the given filename.
+            '''
+            be = BandingEstimator()
+            if verbosity:
+                print('Using paHMM for distance estimation. Note: accepts only unaligned sequences.', file=sys.stderr)
+                print(f"Reading '{filename}'...", file=sys.stderr)
+            be.set_file_input(filename)
 
-         if verbosity:
-             print(f"Using {model} as model. Estimating parameters and rough pairwise distances.", file=sys.stderr)
+            if verbosity:
+                print(f"Using {model} as model. Estimating parameters and rough pairwise distances.", file=sys.stderr)
 
- #        seq_data = cls(be.execute_wag_model())
-         seq_data = cls(be.apply_model(model), sequence_type='aa')
-         if verbosity:
-             print("paHMM initialization done.", file=sys.stderr)
-         return seq_data
+            sequence_type = 'unknown'
+            if model in ['HKY85', 'GTR']:
+                sequence_type == 'dna'
+            elif model in ['WAG', 'LG', 'JTT']:
+                sequence_type == 'aa'
+            else:
+                raise dnc.UnknownModel()
 
-     def taxa(self):
-         return self._taxa
+            #        seq_data = cls(be.execute_wag_model())
+            seq_data = cls(be.apply_model(model), sequence_type=sequence_type)
+            if verbosity:
+                print("paHMM initialization done.", file=sys.stderr)
+            return seq_data
 
-     def sequences(self):
-         """
-         Return the sequences data-structure.
-         """
-         return self._sequences
+        def taxa(self):
+            return self._taxa
 
-     def __getitem__(self, key):
-         """
-         Return a fake SeqRecord. We don't want to construct a SeqRecord from a real sequence
-         because that would involve converting the sequence to a Python-string. That's an O(n) operation
-         and that's not acceptable. Distance calculations are left entirely to paHMM anyway.
-         """
-         return SeqRecord(Seq(""))
+        def sequences(self):
+            """
+            Return the sequences data-structure.
+            """
+            return self._sequences
 
-     @staticmethod
-     def can_retrieve_distances() -> bool:
-         """Checks if distances are readily available and do not have to be
-         computed manually.
-         """
-         return True
+        def __getitem__(self, key):
+            """
+            Return a fake SeqRecord. We don't want to construct a SeqRecord from a real sequence
+            because that would involve converting the sequence to a Python-string. That's an O(n) operation
+            and that's not acceptable. Distance calculations are left entirely to paHMM anyway.
+            """
+            return SeqRecord(Seq(""))
 
-     def distance(self, t1: bytes, t2: bytes) -> float:
-         """Retrieve the distance between two sequences.
-         """
-         return self.sequences().get_distance_from_names(t1, t2)
+        @staticmethod
+        def can_retrieve_distances() -> bool:
+            """
+            Checks if distances are readily available and do not have to be
+            computed 'manually'.
+            """
+            return True
+        
+        def distance(self, t1: bytes, t2: bytes) -> float:
+            """
+            Retrieve the distance between two sequences.
+            """
+            return self.sequences().get_distance_from_names(t1, t2)
