@@ -16,3 +16,9 @@ class AllCharactersDifferentError(Exception):
     in all positions. There are plenty of such examples in Pfam.
     '''
     pass
+
+class UnknownModel(Exception):
+    '''
+    Used when a user-requested model is not implemented or simply misspelled.
+    '''
+    pass
