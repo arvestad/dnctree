@@ -18,7 +18,7 @@ class PartialDistanceMatrix:
         we can have distances as self.dm[t1][t2] elements. If no distance has been estimated to
         or from tx, then self.dm[tx] is empty.
 
-        The "distance_estimator" is a function which takes a count matrix N,
+        The "distance_fcn" is a function which takes a count matrix N,
         where element N_{r,c} counts the number of amino pairs (r, c) in an MSA.
         '''
         self.msa = msa
@@ -166,7 +166,7 @@ class PartialDistanceMatrix:
         '''
         if self.msa.can_retrieve_distances():
             d =  self.msa.distance(t1, t2)
-#            print('dnctree:', d)
+#            print(f'dnctree: {t1}, {t2}: {d}')
             return d
 
         supress_warnings = 'supress_warnings' in self.verbose
