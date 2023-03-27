@@ -7,7 +7,8 @@ import traceback
 
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
-from dnctree import divide_n_conquer_tree, choose_distance_function, pahmm_available
+from dnctree.pahmm_adaptor import pahmm_available
+from dnctree import divide_n_conquer_tree, choose_distance_function
 from dnctree.algtesting import run_alg_testing
 from dnctree.version import __version__ as dnctree_version
 
