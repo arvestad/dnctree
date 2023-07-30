@@ -47,7 +47,7 @@ def divide_n_conquer_tree(seq_data, model_name=None, max_n_attempts=100, max_cla
     actual_work, fraction_work, n = dm.estimate_computational_savings()
     comment = dm._computational_savings()
     if 'info' in verbose or 'verbose' in verbose:
-        print(f'[{comment}]', file=sys.stderr)
+        print(f'[{comment}]')
     aux_info = {'distances-computed': actual_work,
                 'fraction-computed-distances': round(fraction_work,3),
                 'n-taxa': n,
