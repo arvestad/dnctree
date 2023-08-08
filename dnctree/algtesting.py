@@ -76,7 +76,8 @@ class TestingPartialDistanceMatrix(PartialDistanceMatrix):
             d = s_node.get_distance(t)
             self._true_dm[t][s] = d
             self._true_dm[s][t] = d
-            delta = d * random.uniform(- self._epsilon, self._epsilon)
+            delta = random.uniform(- self._epsilon, self._epsilon)
+#            delta = d * random.uniform(- self._epsilon, self._epsilon)
 #            print(f'{100*delta/d:.2}')
             d += delta          # Perturb
             self._dm[s][t] = d
