@@ -17,7 +17,8 @@ if pahmm_available():
     from pahmm import PAHMMError
 else:
     from dnctree.msa import MSA 
-
+    class PAHMMError(Exception):
+        pass
 
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
