@@ -25,6 +25,7 @@ class MSA:
         alv_msa is the MSA retrieved from AlignIO.
         '''
         self._msa = alv_msa.al  # Actual BioPython alignment object
+        self.msa_width = alv_msa.al.get_alignment_length()
         self.type = alv_msa.type # 'aa', or 'dna'
         self._taxa = list(alv_msa.accessions())
         self._id2int = dict()
@@ -201,4 +202,5 @@ else:
             """
             Retrieve the distance between two sequences.
             """
-            return self.sequences().get_distance_from_names(t1, t2)
+            d = self.sequences().get_distance_from_names(t1, t2)
+            return d
