@@ -63,7 +63,7 @@ class PartialDistanceMatrix:
         self._dm[t2][t1] = d
 
 
-    def quartet_test(self, l1, l2, l3, x):
+    def select_clade(self, x, l1, l2, l3):
         '''
         Return the leaf (l1, l2, or l3) of which leaf a quartet test suggests x belongs to.
         '''

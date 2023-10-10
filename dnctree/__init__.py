@@ -55,6 +55,9 @@ def divide_n_conquer_tree(seq_data, model_name=None, max_n_attempts=100, max_cla
                 'model-name': chosen_model_name,
                 'description': data_description
     }
+    if isinstance(seq_data, MSA):
+        aux_info['msa-width'] = seq_data.msa_width
+
     return t, aux_info
 
 
@@ -191,7 +194,7 @@ def clade_sort_taxa(dm, taxa, l1, l2, l3):
     clade_assignment = {l1: [l1], l2: [l2], l3: [l3]} # Keep track of clade assignment.
     for x in taxa:
         if x not in [l1, l2, l3]:
-            clade = dm.quartet_test(l1, l2, l3, x)
+            clade = dm.select_clade(x, l1, l2, l3)
             clade_assignment[clade].append(x)
 
     # for cl in [l1, l2, l3]:
