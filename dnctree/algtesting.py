@@ -78,8 +78,10 @@ class TestingPartialDistanceMatrix(PartialDistanceMatrix):
             self._true_dm[s][t] = d
             delta = random.uniform(- self._epsilon, self._epsilon)
 #            delta = d * random.uniform(- self._epsilon, self._epsilon)
-#            print(f'{100*delta/d:.2}')
+#            print(f'{s}  {t}\t {d:.2}\t {delta:.2}\t {abs(100*delta/d):.2f}%', file=sys.stderr)
             d += delta          # Perturb
+            if d < 0:
+                print(f'{s}  {t}\t {d:.2}\t {delta:.2}\t {abs(100*delta/d):.2f}%', file=sys.stderr)
             self._dm[s][t] = d
             self._dm[t][s] = d
             self._seen[s][t] = False
@@ -87,10 +89,6 @@ class TestingPartialDistanceMatrix(PartialDistanceMatrix):
 
 
     def get(self, t1, t2):
-#        if not self._seen[t1][t2]:
-#            self._n_distances_computed += 1
-#            self._seen[t1][t2] = True
-#            self._seen[t2][t1] = True
         return self._dm[t1][t2]
 
 
