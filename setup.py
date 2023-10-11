@@ -45,7 +45,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires='>=3.5',    # I want to merge dictionaries easily. From 3.5, {**x, **y} merges dictionaries x and y
     entry_points = {
-        'console_scripts': ['dnctree = dnctree.__main__:main']
+        'console_scripts': ['dnctree = dnctree.main:main']
         },
     install_requires=requirements,
     classifiers=[
