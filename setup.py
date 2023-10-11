@@ -21,12 +21,15 @@ if sys.version_info.major < 3:
              'Did you run pip install dnctree?\n'
              'Try \'pip3 install dnctree\'')
 
-elif sys.version_info.minor < 2:
-    sys.exit('\nSorry, Python < 3.2 is not supported\n')
+elif sys.version_info.minor < 6:
+    sys.exit('\nSorry, Python < 3.6 is not supported\n')
 
 requirements = [
-    'alv',
+    'alv>=1.5',
+    'modelmatcher>=1.1.3',
     'biopython>=1.70',
+    'ete3>=3.1.1',
+    'tree_matching_distance'
 ]
 
 setuptools.setup(
@@ -34,7 +37,7 @@ setuptools.setup(
     version=__version__,
     author="Lars Arvestad",
     author_email="arve@math.su.se",
-    description="A console-based sequence alignment viewer",
+    description="Distance-based phylogeny inference using a randomised divide-and-conquer method",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/arvestad/dnctree",
@@ -42,13 +45,13 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires='>=3.5',    # I want to merge dictionaries easily. From 3.5, {**x, **y} merges dictionaries x and y
     entry_points = {
-        'console_scripts': ['dnctree = dnctree.main:main']
+        'console_scripts': ['dnctree = dnctree.__main__:main']
         },
     install_requires=requirements,
-    classifiers=(
+    classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
-    ),
+    ],
 )

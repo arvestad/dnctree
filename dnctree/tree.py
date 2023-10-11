@@ -75,39 +75,6 @@ def _tree_to_string_helper(d, v, source):
             n += 1
             subtrees.append(_tree_to_string_helper(d, neighbor, v))
     if n == 0:
-        return v
+        return v.decode() if isinstance(v, bytes) else v
     else:
         return '(' + ','.join(subtrees) + ')'
-
-
-def test_tree_data():
-    t = Tree()
-    t.add_edge('a', '1')
-    t.add_edge('b', '1')
-    t.add_edge('1', '2')
-    t.add_edge('d', '3')
-    t.add_edge('3', '4')
-    t.add_edge('2', '3')
-    t.add_edge('4', 'e')
-    t.add_edge('f', '4')
-    t.add_edge('c', '2')
-    t.set_start_node('1')
-    print("Starting in '1':", str(t))
-
-    t.set_start_node('3')
-    print("Starting in '3':", str(t))
-
-def test_merge():
-    t1 = Tree()
-    t1.add_edge('a', '1')
-    t1.add_edge('b', '1')
-
-    t2 = Tree()
-    t2.add_edge('c', '2')
-    t2.add_edge('d', '2')
-
-    t1.set_start_node('1')
-    print(str(t1))
-    t1.merge(t2)
-    t1.add_edge('1', '2')
-    print(str(t1))
