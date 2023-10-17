@@ -1,6 +1,6 @@
 # dnctree: Randomized divide and conquer algorithm for phylogenetic trees
 
-See biorXiv paper about the method.
+See the [biorXiv](https://doi.org/10.1101/2023.10.11.561902) paper about the method.
 
 
 ## Example usage
