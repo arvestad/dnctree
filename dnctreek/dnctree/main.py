@@ -111,6 +111,7 @@ def check_args(args):
 
 
 def main():
+    assert True
     args = None
 
     try:
