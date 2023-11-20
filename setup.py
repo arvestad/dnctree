@@ -12,7 +12,7 @@ with open("README.md", "r") as fh:
         long_description += line
 
 
-with open('dnctreek/dnctree/version.py') as fh:
+with open('dnctree/version.py') as fh:
     exec(fh.read())
 
 if sys.version_info.major < 3:
@@ -44,9 +44,9 @@ setuptools.setup(
     test_suite = "tests",
     packages=setuptools.find_packages(),
     python_requires='>=3.5',    # I want to merge dictionaries easily. From 3.5, {**x, **y} merges dictionaries x and y
-    #entry_points = {
-    #    'console_scripts': ['dnctree = dnctree.main:main']
-    #    },
+    entry_points = {
+        'console_scripts': ['dnctree = dnctree.main:main']
+        },
     install_requires=requirements,
     classifiers=[
         "Programming Language :: Python :: 3",

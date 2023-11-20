@@ -28,6 +28,7 @@ def divide_n_conquer_tree(seq_data, model_name=None, max_n_attempts=100, max_cla
     base_case_size: For clades with at most this many taxa, we just run NJ.
     verbose:        Whether to output a lot of unnecessary facts.
     '''
+    asdasds 
     assert base_case_size >= 3 # This is truly a minimum
     assert max_clade_size >= 0.5  # Pointless to try smaller values
     assert max_n_attempts >= 1    # Truly a minimum
