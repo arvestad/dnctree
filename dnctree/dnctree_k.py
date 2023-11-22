@@ -1,11 +1,11 @@
 import itertools
 import random
 
-from tree import Tree
+from dnctree.tree import Tree
 
 
 ################################################################################
-## Neighbor joining where edge weights are computed and stored
+## Neighbor joining where edge weights are computed
 ################################################################################
 
 # Different from the version in `__init__.py` as this one calculates the edge
@@ -130,7 +130,7 @@ def get_center_vertex(tree):
     """
     Returns the center vertex of the tree.
     """
-    lenghts = {}
+    lenghts = {}  # Memoization dictionary.
     center_candidate = None
     shortest_longest_length_so_far = len(tree.adjacencies)  # Will always be beaten.
     for v, neighbors in tree.adjacencies.items():
@@ -182,7 +182,7 @@ def get_weights_to_leaves(tree: Tree, dm, edge):
 def get_clades_and_dists_to_center(tree: Tree, dm, center_vertex):
     """
     Splits the tree into three clades (the leaves), and returns three dictionaries:
-    - clade_to_taxa: maps clade number (0, 1, and 2) to a list of taxa in that clade.
+    - clade_to_taxa: maps clade number 0, 1, and 2 to a list of taxa in that clade.
     - taxon_to_clade: maps each taxon to the clade it is in.
     - dist_to_center: maps each taxon to the distance from it to the center vertex.
     """
@@ -198,15 +198,15 @@ def get_clades_and_dists_to_center(tree: Tree, dm, center_vertex):
 
 
 ################################################################################
-## The new DNC tree algorithm
+## The new DNC tree k algorithm
 ################################################################################
 
 
 def dnc_tree_k(dm, taxa, base_case_size=5, core_size=5):
     """
-    Construct a tree with the DNC algorithm that runs NJ on a sample of k taxa,
-    referred to as the core.
-    If the number of taxa is less than or equal to the base case size, then
+    Construct a tree with the DNC tree k algorithm that runs NJ on a sample of
+    core_size taxa, referred to as the core.
+    If the number of taxa is less than or equal to base_case_size, then
     the tree is constructed using NJ on all taxa.
 
     Returns the tree.
@@ -222,9 +222,9 @@ def dnc_tree_k(dm, taxa, base_case_size=5, core_size=5):
         # Determine the center vertex and partition the core taxa into three clades.
         center_vertex = get_center_vertex(core_tree)
         (
-            clade_to_core_taxa,
-            taxon_to_clade,
-            dist_to_center,
+            clade_to_core_taxa,  # Maps 0, 1, and 2 to list of taxa, respectively.
+            taxon_to_clade,  # Maps each taxon to the clade it is in, e.g., "T1" -> 0.
+            dist_to_center,  # Maps each taxon to the distance from it to the center vertex.
         ) = get_clades_and_dists_to_center(core_tree, dm, center_vertex)
 
         # Update the partial distance matrix with distances from core taxa to the center,
@@ -239,7 +239,7 @@ def dnc_tree_k(dm, taxa, base_case_size=5, core_size=5):
         sum_distances = {x: sum(dm.get(x, y) for y in core_taxa) for x in taxa}
 
         k = len(core_taxa)
-        clade_to_non_core_taxa = {0: [], 1: [], 2: []}
+        clade_to_non_core_taxa = {0: [], 1: [], 2: []}  # Will be filled in below.
         for v in non_core_taxa:
             smallest_q_so_far = None
             for w in core_taxa:
