@@ -163,11 +163,6 @@ def dnc_tree(
     returns:  A Tree object.
     """
     if dnctree_k_algo:
-        # First set the distance from each taxon to itself to 0, which is needed for the
-        # DNC tree k algorithm.
-        for x in taxa:
-            dm.set(x, x, 0)
-
         # Using the base_case_size as the core_size.
         return dnc_tree_k(
             dm, taxa, base_case_size=base_case_size, core_size=base_case_size
