@@ -19,7 +19,7 @@ def run_alg_testing(args, verbosity=[]):
                                          base_case_size=base_case_size,
                                          first_triple=args.first_triple,
                                          verbose=verbosity)
-        dnc_estimated_tree = ete3.Tree(str(t_dnc));
+        dnc_estimated_tree = ete3.Tree(str(t_dnc))
 
         rf_dnc, rf_dnc_max, *x = dnc_estimated_tree.robinson_foulds(dt._dt, unrooted_trees=True)
         rf_dnc_list.append(f'{rf_dnc/rf_dnc_max:.5}')
