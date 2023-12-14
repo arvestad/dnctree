@@ -27,15 +27,15 @@ elif sys.version_info.minor < 6:
 requirements = [
     'alv>=1.5',
     'modelmatcher>=1.1.3',
-    'biopython>=1.70',
+    'biopython>=1.81',
     'ete3>=3.1.1',
     'tree_matching_distance'
 ]
 
 setuptools.setup(
-    name="dnctreek",
+    name="dnctree",
     version=__version__,
-    author="Lars Arvestad",
+    author="Lars Arvestad and Amy Lee Jalsenius",
     author_email="arve@math.su.se",
     description="Distance-based phylogeny inference using a randomised divide-and-conquer method",
     long_description=long_description,
@@ -43,7 +43,7 @@ setuptools.setup(
     url="https://github.com/arvestad/dnctree",
     test_suite = "tests",
     packages=setuptools.find_packages(),
-    python_requires='>=3.5',    # I want to merge dictionaries easily. From 3.5, {**x, **y} merges dictionaries x and y
+    python_requires='>=3.6',    # I want to merge dictionaries easily. From 3.5, {**x, **y} merges dictionaries x and y
     entry_points = {
         'console_scripts': ['dnctree = dnctree.main:main']
         },
