@@ -22,12 +22,12 @@ def divide_n_conquer_tree(
     max_clade_size=0.5,
     base_case_size=100,
     first_triple=None,
+    simple_alg=False,
     verbose=[],
 ):
     """
     Input: An object with sequence data (for the input alignment or unaligned if using PaHMM),
-           and a function of three args (two taxa names and a NumPy 20x20 matrix with amino acid counts
-           for estimating evolutionary distance.
+           and the name of a evolutionary model.
     Returns: a tree as a Newick-formatted string.
 
     Parameters:
@@ -35,6 +35,7 @@ def divide_n_conquer_tree(
     max_clade_size: The fraction of the taxa that are required before deciding we are happy
                     with a triple. We require that the largest subproblem (clade) has at most this fraction of taxa.
     base_case_size: For clades with at most this many taxa, we just run NJ.
+    simple_alg:      Use the algorithm which randomly chooses three taxa to guide setup of three subproblems.
     verbose:        Whether to output a lot of unnecessary facts.
     """
     assert base_case_size >= 3  # This is truly a minimum
@@ -55,15 +56,21 @@ def divide_n_conquer_tree(
         seq_data, distance_fcn, verbose=verbose
     )  # We will gradually add distances to this "matrix"
 
-    t = dnc_tree(
-        dm,
-        seq_data.taxa(),
-        max_n_attempts,
-        max_clade_size,
-        base_case_size,
-        first_triple,
-        verbose,
-    )
+    if simple_alg:
+        t = dnc_tree_simple(dm,
+                           seq_data.taxa(),
+                           max_n_attempts, # Can be removed?
+                           max_clade_size, # Can be removed?
+                           base_case_size,
+                           first_triple,
+                           verbose,
+                           )
+    else:                       # Use Amy's work
+        # Using the base_case_size as the core_size.
+        t = dnc_tree_k(
+            dm, seq_data.taxa(), base_case_size=base_case_size, core_size=base_case_size
+        )
+
     actual_work, fraction_work, n = dm.estimate_computational_savings()
     comment = dm._computational_savings()
     if "info" in verbose or "verbose" in verbose:
@@ -102,7 +109,7 @@ def testing_divide_n_conquer(
     Other parameters are the same as for "divide_n_conquer".
     """
 
-    t = dnc_tree(
+    t = dnc_tree_simple(
         model,
         model.taxa,
         max_n_attempts,
@@ -141,7 +148,7 @@ def choose_distance_function(seqtype, model_name=None):
         raise dnc.UnknownModel(f"Not a valid sequence type: {seqtype}.")
 
 
-def dnc_tree(
+def dnc_tree_simple(
     dm,
     taxa,
     max_n_attempts,
@@ -162,14 +169,6 @@ def dnc_tree(
 
     returns:  A Tree object.
     """
-    if dnctree_k_algo:
-        # Using the base_case_size as the core_size.
-        return dnc_tree_k(
-            dm, taxa, base_case_size=base_case_size, core_size=base_case_size
-        )
-
-    # Run the original algorithm.
-
     if len(taxa) <= base_case_size:
         if "verbose" in verbose:
             print(f"Full NJ on {len(taxa)} taxa:", file=sys.stderr, flush=True)
@@ -197,7 +196,7 @@ def dnc_tree(
             c[i].append(
                 v
             )  # Ensure that the central vertex participates as a representative of the other clades
-            subtrees[i] = dnc_tree(
+            subtrees[i] = dnc_tree_simple(
                 dm, c[i], max_n_attempts, max_clade_size, base_case_size, None, verbose
             )
             if verbose:
