@@ -42,8 +42,11 @@ def cmd_line_args():
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. "
                          "Be specific if the file is not recognized automatically. Default: %(default)s")
+    ap.add_argument('-s', '--simple', action='store_true',
+                    help='Use the simple algorithm, which uses three taxa and sorts the rest into three'
+                    'subproblems. Worse quality than the standard algorithm.')
     ap.add_argument('--pahmm', metavar='pahmm_model', choices=pahmm_aa_models+pahmm_dna_models,
-                    help='Use paHMM library to calculate distances using one of the given models.'
+                    help='Experimental: Use paHMM library to calculate distances using one of the given models.'
                     'Note that paHMM implements a different set of models. Model parameters for'
                     'the DNA models, HKY85 and GTR, are inferred.')
     ap.add_argument('-j', '--json-output', action='store_true',
@@ -111,7 +114,6 @@ def check_args(args):
 
 
 def main():
-    assert True
     args = None
 
     try:
@@ -181,6 +183,7 @@ def main():
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
                                   first_triple=args.first_triple,
+                                  simple_alg=args.simple,
                                   verbose=verbosity)
 
         stop_time = time.perf_counter()
