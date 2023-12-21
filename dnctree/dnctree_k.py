@@ -234,15 +234,39 @@ def dnc_tree_k(dm, taxa, base_case_size=5, core_size=5):
 
         # Assign non-core taxa to clades.
 
-        # sum_distances[x] = \sum_{y \in V_{core}} d(x, y)
-        # for any taxa x.
-        sum_distances = {x: sum(dm.get(x, y) for y in core_taxa) for x in taxa}
+        # In the following we will assign non-core taxa to the clades. We will do this
+        # by assigning each non-core taxon v to the clade that contains the core
+        # taxon w that minimizes the following quantity:
+        #
+        # Q(v, w) = (n - 2) d(v, w) - \sum_{x=1}^n d(v, x) - \sum_{x=1}^n d(w, x),
+        #
+        # where n is the number of taxa (i.e., core taxa plus the non-core taxon v).
+        # Let C be the set of core taxa. Hence |C| = k. Let A = C \cup {v}, that is the
+        # core taxa plus the non-core taxon v. The above quantity Q can be rewritten as
+        # follows:
+        #
+        # Q(v, w) = (k + 1 - 2) d(v, w) - \sum_{x \in A} d(v, x) - \sum_{x \in A} d(w, x).
+        #
+        # We can rewrite this as follows:
+        #
+        # Q(v, w) = (k - 1) d(v, w) - \sum_{x \in C} d(v, x) - d(v,v) - \sum_{x \in C} d(w, x) - d(w, v),
+        #
+        # which is the same as
+        #
+        # Q(v, w) = (k - 2) d(v, w) - \sum_{x \in C} d(v, x) - \sum_{x \in C} d(w, x).
+        #
+        # This formula is used below.
+
+        # sum_distances[v] = \sum_{x \in C} d(v, x)
+        # for any taxa v.
+        sum_distances = {v: sum(dm.get(v, x) for x in core_taxa) for v in taxa}
 
         k = len(core_taxa)
         clade_to_non_core_taxa = {0: [], 1: [], 2: []}  # Will be filled in below.
         for v in non_core_taxa:
             smallest_q_so_far = None
             for w in core_taxa:
+                # q = Q(v, w) = (k - 2) d(v, w) - \sum_{x \in C} d(v, x) - \sum_{x \in C} d(w, x).
                 q = (k - 2) * dm.get(v, w) - sum_distances[v] - sum_distances[w]
                 if smallest_q_so_far is None or q < smallest_q_so_far:
                     smallest_q_so_far = q
@@ -250,6 +274,15 @@ def dnc_tree_k(dm, taxa, base_case_size=5, core_size=5):
             clade_to_non_core_taxa[taxon_to_clade[v]].append(v)
 
         # Estimate distance between each non-core taxon and the center vertex.
+            
+        # The logic is as follows. Suppose that v is a non-core taxon in clade 0.
+        # Let w be a core taxon in clade 1. An estimate of the distance from v to
+        # the center vertex, parameterized by w, is
+        # d(v, w) - d(w, center_vertex).
+        # The final estimate of the distance from v to the center vertex is the
+        # average of the estimates over all core taxa w in clades 1 and 2.
+        # The distance d(w, center_vertex) is obtained from the dictionary
+        # dist_to_center.
 
         # C[i] = \sum_[w \in core_taxa_in_clade_i] d(w, center_vertex)
         # for i \in {0, 1, 2}.
