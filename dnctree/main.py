@@ -98,35 +98,20 @@ def check_args(args):
     others simply a correction to a valid parameter value.
     '''
 
-    if args.max_clade_size <= 0.01:
-        sys.exit('Error: --max-clade-size cannot be that small')
-    elif args.max_clade_size > 1.0:
-        print('Warning: --max-clade-size cannot be that large, changing to 1.0', file=sys.stderr)
-        args.max_clade_size = 1.0
-
-    if args.base_case_size < 3:
-        sys.exit('Error: --base-case-size must be at least 3.')
-
-    if args.max_n_attempts < 1:
-        print('Warning: --max-n-attempts cannot be smaller than 1. '
-              'Setting that parameter to 1 and continuing.', file=sys.stderr)
-        args.max_n_attempts = 1
-
-
-def main():
-    args = None
-
     try:
-        args = cmd_line_args()
-        check_args(args)
+        if args.max_clade_size <= 0.01:
+            sys.exit('Error: --max-clade-size cannot be that small')
+        elif args.max_clade_size > 1.0:
+            print('Warning: --max-clade-size cannot be that large, changing to 1.0', file=sys.stderr)
+            args.max_clade_size = 1.0
 
-        verbosity = []
-        if args.info:
-            verbosity.append('info')
-        if args.verbose:
-            verbosity.append('verbose')
-        if args.supress_warnings:
-            verbosity.append('supress_warnings')
+        if args.base_case_size < 3:
+            sys.exit('Error: --base-case-size must be at least 3.')
+
+        if args.max_n_attempts < 1:
+            print('Warning: --max-n-attempts cannot be smaller than 1. '
+                  'Setting that parameter to 1 and continuing.', file=sys.stderr)
+            args.max_n_attempts = 1
 
         if 'DNCTREE_TESTING' in os.environ:
             if args.alg_testing:
@@ -136,12 +121,21 @@ def main():
         if args.secret_developer_options:
             print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
             sys.exit(0)
-
     except KeyboardInterrupt:
         sys.exit()
 
+        
+def main_load_data_and_model(args):
+    '''
+    The model is in part decided by the data. In case we want to try PaHMM, we have to deal with
+    that in a special way.
+
+    Returns: the sequence data (typically an MSA) and the name of the model to use.
+
+    There are several ways this function can go wrong due to user input and strange data, so
+    we catch several different exceptions and give appropriate (?) feedback.
+    '''
     try:
-        start_time = time.perf_counter()
         if args.pahmm:
             if not pahmm_available():
                 print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
@@ -160,6 +154,7 @@ def main():
             model_name = None
             if args.model != 'guess':
                 model_name = args.model
+        return seq_data, model_name
     except KeyboardInterrupt:
         sys.exit()
     except FileNotFoundError:
@@ -172,6 +167,22 @@ def main():
         print('Error when reading data in dnctree:', e, file=sys.stderr)
         traceback.print_exc()
         sys.exit(1)
+
+       
+def main():
+    args = cmd_line_args()
+    check_args(args)
+
+    verbosity = []              # TODO: Start using the logging module instead
+    if args.info:
+        verbosity.append('info')
+    if args.verbose:
+        verbosity.append('verbose')
+    if args.supress_warnings:
+        verbosity.append('supress_warnings')
+
+    start_time = time.perf_counter()
+    seq_data, model_name = main_load_data_and_model(args)
 
     try:
         if args.verbose:
