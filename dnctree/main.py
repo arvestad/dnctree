@@ -34,7 +34,7 @@ def cmd_line_args():
     ap.add_argument('infile', help='Multiple sequence alignment in a standard format '
                                    '(FASTA, Phylip, Nexus, Clustal, or Stockholm format).')
     ap.add_argument('-t', '--seqtype', default='guess', choices=['aa', 'dna', 'rna', 'guess'],
-                    help='Set the sequence type to expect. The default is to guess the input type.')
+                    help='Set the input sequence type. The default is to guess the input type.')
     ap.add_argument('-m', '--model', default='guess', choices=['guess', 'kimura'] + aa_models + dna_models,
                     help=f'Choose one of the named models or let dnctree guess based on the sequence type. '
                          f'Default is {aa_default_model}.')
@@ -74,7 +74,8 @@ def cmd_line_args():
                        help='Stop sampling triples when the largest subclade is this fraction of the '
                             'number of taxa. Default: %(default)s')
     group.add_argument('--first-triple', nargs=3, metavar='taxa',
-                       help='Give three taxa to induce first subproblems.')
+                       help='Give three taxa to induce first subproblems when using --simple. No effect'
+                            'at all without --simple.')
     group.add_argument('--secret-developer-options', action='store_true',
                        help='This option shows how to access secret expert developer options')
 
