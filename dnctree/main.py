@@ -200,7 +200,7 @@ def main():
 
         stop_time = time.perf_counter()
         if args.json_output:
-            aux_info['computing-time'] = stop_time - start_time
+            aux_info['computing-time (s)'] = stop_time - start_time
             print(make_json_string(t, aux_info, args))
         else:
             print(t)
