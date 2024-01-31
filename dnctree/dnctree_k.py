@@ -20,18 +20,20 @@ def nj_selection_function_with_weights(dm, current_leaves):
                 sum_for_a += dm.get(a, b)
         return sum_for_a
 
+    row_sum = {}
+    for x in current_leaves:
+        row_sum[x] = sum_distances(x)
+
     n_minus_2 = len(current_leaves) - 2
     Q_ij_min = n_minus_2 * dm.get(
         current_leaves[0], current_leaves[1]
     )  # Arbitrary but safe starting value that won't be chosen.
     best_so_far = None
     for x, y in itertools.combinations(current_leaves, 2):
-        sum_distances_x = sum_distances(x)
-        sum_distances_y = sum_distances(y)
-        Q_ij = n_minus_2 * dm.get(x, y) - sum_distances_x - sum_distances_y
+        Q_ij = n_minus_2 * dm.get(x, y) - row_sum[x] - row_sum[y]
         if best_so_far is None or Q_ij < Q_ij_min:
             Q_ij_min = Q_ij
-            best_so_far = (x, y, sum_distances_x, sum_distances_y)
+            best_so_far = (x, y, row_sum[x], row_sum[y])
 
     return best_so_far
 
