@@ -51,6 +51,9 @@ def divide_n_conquer_tree(
         distance_fcn = "not_needed_strangely_enough"  # Clearly a case of bad program structure. Should refactor.
         chosen_model_name = model_name
         data_description = f"Unaligned {seq_data.type.upper()} sequences"
+    else:
+        datatype = type(seq_data)
+        raise ValueError(f'Cannot handle input of type {datatype}')
 
     dm = PartialDistanceMatrix(
         seq_data, distance_fcn, verbose=verbose
