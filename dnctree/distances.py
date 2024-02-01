@@ -215,28 +215,3 @@ def likelihood_derivative_at_t(model, N, t):
     return likelihood_derivative
 
 
-def __poisson_distance(t1, t2, s1, s2, supress_warnings=False):
-    '''
-    Older and worse alternative than kimura_distance().
-    Currently not up-to-date! This function will not work in the new framework
-    '''
-    n_chars = 0
-    n_diffs = 0
-    for c1, c2 in zip(s1, s2):
-        if c1=='-' or c2=='-':
-            continue
-        if c1 != c2:
-            n_diffs += 1
-        n_chars += 1
-
-    if n_chars == 0:
-        if not supress_warnings:
-            print(f'Warning: No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to distance=2.5.', file=sys.stderr)
-        return 2.5
-    if n_diffs == n_chars:
-        if not supress_warnings:
-            print(f'Warning: Degenerate sequence pair: {t1} and {t2}. All shared characters are different. Defaulting to distance=2.5.', file=sys.stderr)
-        return 2.5
-
-    distance = - math.log(1 - n_diffs/n_chars)
-    return distance
