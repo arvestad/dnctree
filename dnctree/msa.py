@@ -54,9 +54,10 @@ class MSA:
         This method is primarily for testing.
         '''
         biopy_msa = MultipleSeqAlignment([])
-        for i, seq in enumerate(seqs):
+        for i, s in enumerate(seqs):
             acc = f'seq{i}'
-            biopy_msa.add_sequence(acc, seq)
+            new_record = SeqRecord(Seq(s), id=acc)
+            biopy_msa.append(new_record)
         return cls(alv.alignment.AminoAcidAlignment(biopy_msa))         # Instantiate
 
     @classmethod

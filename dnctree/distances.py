@@ -4,10 +4,10 @@ import numpy as np
 import scipy.optimize
 import sys
 
-_tolerance = 0.001
+_tolerance = 0.02
 _delta = 0.0001
-_maxiters = 50
-_maxdistance = 10
+_maxiters = 20
+_maxdistance = 3
 
 
 def kimura_distance(N):
@@ -113,14 +113,67 @@ def ml_distance_estimate_arve(model, N, start_dist=None):
     return d
 
 
-def ml_distance_estimate_scipy(model, N, start_dist=None):
+def old_ml_distance_estimate_scipy(model, N, start_dist=None):
     '''
     Same as ml_distance_estimate, but using the "bounded" method in SciPy (really Brent's, apparently).
     '''
     bounds = (_delta, _maxdistance)
+    method='Bounded'
     ml_func = lambda x: - log_likelihood_at_t(model, N, x)
-    res = scipy.optimize.minimize_scalar(ml_func, bounds=bounds, method='Bounded', options={'xatol':_tolerance, 'maxiter':_maxiters})
+    res = scipy.optimize.minimize_scalar(ml_func, bounds=bounds, method=method, options={'xatol':_tolerance, 'maxiter':_maxiters})
     return res.x
+
+
+def ml_distance_estimate_scipy(model, N, start_dist=None):
+    '''
+    Same as ml_distance_estimate, but using the "bounded" method in SciPy (really Brent's,
+    apparently), and Kimura's heuristic in a first step to determine suitable bounds.
+
+    '''
+    d_kimura = kimura_distance(N)
+    if d_kimura < 0.1:
+        bounds = (_delta, 0.2)
+    elif d_kimura < 0.25:
+        bounds = (_delta, 0.5)
+    elif d_kimura < 0.5:
+        bounds = (0.1, 0.75)
+    elif d_kimura < 1.0:
+        bounds = (0.25, 1.5)
+    else:
+        bounds = (1.0, _maxdistance)
+
+    bracket = (0.75 * d_kimura, 1.25 * d_kimura)
+    method='Bounded'
+    ml_func = lambda x: - log_likelihood_at_t(model, N, x)
+    res = scipy.optimize.minimize_scalar(ml_func, bounds=bounds, bracket=bracket, method=method, options={'xatol':_tolerance, 'maxiter':_maxiters})
+    return res.x
+
+
+
+def _experimental_ml_distance_estimate_scipy(model, N, start_dist=None):
+    '''
+    Same as ml_distance_estimate, but using the "bounded" method in SciPy (really Brent's,
+    apparently), and Kimura's heuristic in a first step to determine suitable bounds.
+
+    '''
+    d_kimura = kimura_distance(N)
+    if d_kimura < 0.1:
+        bounds = (_delta, 0.2)
+    elif d_kimura < 0.25:
+        bounds = (_delta, 0.5)
+    elif d_kimura < 0.5:
+        bounds = (0.1, 0.75)
+    elif d_kimura < 1.0:
+        bounds = (0.25, 1.5)
+    else:
+        bounds = (1.0, _maxdistance)
+
+    bracket = (0.75 * d_kimura, 1.25 * d_kimura)
+    method='Bounded'
+    ml_func = lambda x: - log_likelihood_at_t(model, N, x)
+    res = scipy.optimize.minimize_scalar(ml_func, bounds=bounds, bracket=bracket, method=method, options={'xatol':_tolerance, 'maxiter':_maxiters})
+    return res.x, res.nfev, res.nit # estimate, evaluations of function, and number of iterations
+
 
 def ml_distance_estimate_secant(model, N, start_dist=None):
     '''

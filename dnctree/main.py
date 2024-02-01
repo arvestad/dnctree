@@ -34,7 +34,7 @@ def cmd_line_args():
     ap.add_argument('infile', help='Multiple sequence alignment in a standard format '
                                    '(FASTA, Phylip, Nexus, Clustal, or Stockholm format).')
     ap.add_argument('-t', '--seqtype', default='guess', choices=['aa', 'dna', 'rna', 'guess'],
-                    help='Set the sequence type to expect. The default is to guess the input type.')
+                    help='Set the input sequence type. The default is to guess the input type.')
     ap.add_argument('-m', '--model', default='guess', choices=['guess', 'kimura'] + aa_models + dna_models,
                     help=f'Choose one of the named models or let dnctree guess based on the sequence type. '
                          f'Default is {aa_default_model}.')
@@ -42,8 +42,11 @@ def cmd_line_args():
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. "
                          "Be specific if the file is not recognized automatically. Default: %(default)s")
+    ap.add_argument('-s', '--simple', action='store_true',
+                    help='Use the simple algorithm, which uses three taxa and sorts the rest into three'
+                    'subproblems. Worse quality than the standard algorithm.')
     ap.add_argument('--pahmm', metavar='pahmm_model', choices=pahmm_aa_models+pahmm_dna_models,
-                    help='Use paHMM library to calculate distances using one of the given models.'
+                    help='Experimental: Use paHMM library to calculate distances using one of the given models.'
                     'Note that paHMM implements a different set of models. Model parameters for'
                     'the DNA models, HKY85 and GTR, are inferred.')
     ap.add_argument('-j', '--json-output', action='store_true',
@@ -71,7 +74,8 @@ def cmd_line_args():
                        help='Stop sampling triples when the largest subclade is this fraction of the '
                             'number of taxa. Default: %(default)s')
     group.add_argument('--first-triple', nargs=3, metavar='taxa',
-                       help='Give three taxa to induce first subproblems.')
+                       help='Give three taxa to induce first subproblems when using --simple. No effect'
+                            'at all without --simple.')
     group.add_argument('--secret-developer-options', action='store_true',
                        help='This option shows how to access secret expert developer options')
 
@@ -95,35 +99,20 @@ def check_args(args):
     others simply a correction to a valid parameter value.
     '''
 
-    if args.max_clade_size <= 0.01:
-        sys.exit('Error: --max-clade-size cannot be that small')
-    elif args.max_clade_size > 1.0:
-        print('Warning: --max-clade-size cannot be that large, changing to 1.0', file=sys.stderr)
-        args.max_clade_size = 1.0
-
-    if args.base_case_size < 3:
-        sys.exit('Error: --base-case-size must be at least 3.')
-
-    if args.max_n_attempts < 1:
-        print('Warning: --max-n-attempts cannot be smaller than 1. '
-              'Setting that parameter to 1 and continuing.', file=sys.stderr)
-        args.max_n_attempts = 1
-
-
-def main():
-    args = None
-
     try:
-        args = cmd_line_args()
-        check_args(args)
+        if args.max_clade_size <= 0.01:
+            sys.exit('Error: --max-clade-size cannot be that small')
+        elif args.max_clade_size > 1.0:
+            print('Warning: --max-clade-size cannot be that large, changing to 1.0', file=sys.stderr)
+            args.max_clade_size = 1.0
 
-        verbosity = []
-        if args.info:
-            verbosity.append('info')
-        if args.verbose:
-            verbosity.append('verbose')
-        if args.supress_warnings:
-            verbosity.append('supress_warnings')
+        if args.base_case_size < 3:
+            sys.exit('Error: --base-case-size must be at least 3.')
+
+        if args.max_n_attempts < 1:
+            print('Warning: --max-n-attempts cannot be smaller than 1. '
+                  'Setting that parameter to 1 and continuing.', file=sys.stderr)
+            args.max_n_attempts = 1
 
         if 'DNCTREE_TESTING' in os.environ:
             if args.alg_testing:
@@ -133,12 +122,21 @@ def main():
         if args.secret_developer_options:
             print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
             sys.exit(0)
-
     except KeyboardInterrupt:
         sys.exit()
 
+        
+def main_load_data_and_model(args):
+    '''
+    The model is in part decided by the data. In case we want to try PaHMM, we have to deal with
+    that in a special way.
+
+    Returns: the sequence data (typically an MSA) and the name of the model to use.
+
+    There are several ways this function can go wrong due to user input and strange data, so
+    we catch several different exceptions and give appropriate (?) feedback.
+    '''
     try:
-        start_time = time.perf_counter()
         if args.pahmm:
             if not pahmm_available():
                 print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
@@ -157,6 +155,7 @@ def main():
             model_name = None
             if args.model != 'guess':
                 model_name = args.model
+        return seq_data, model_name
     except KeyboardInterrupt:
         sys.exit()
     except FileNotFoundError:
@@ -170,6 +169,22 @@ def main():
         traceback.print_exc()
         sys.exit(1)
 
+       
+def main():
+    args = cmd_line_args()
+    check_args(args)
+
+    verbosity = []              # TODO: Start using the logging module instead
+    if args.info:
+        verbosity.append('info')
+    if args.verbose:
+        verbosity.append('verbose')
+    if args.supress_warnings:
+        verbosity.append('supress_warnings')
+
+    start_time = time.perf_counter()
+    seq_data, model_name = main_load_data_and_model(args)
+
     try:
         if args.verbose:
             n = len(seq_data.taxa())
@@ -180,11 +195,12 @@ def main():
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
                                   first_triple=args.first_triple,
+                                  simple_alg=args.simple,
                                   verbose=verbosity)
 
         stop_time = time.perf_counter()
         if args.json_output:
-            aux_info['computing-time'] = stop_time - start_time
+            aux_info['computing-time (s)'] = stop_time - start_time
             print(make_json_string(t, aux_info, args))
         else:
             print(t)
