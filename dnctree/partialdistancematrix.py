@@ -1,3 +1,4 @@
+import logging
 import math
 import sys
 import dnctree.exceptions as dnc
@@ -12,7 +13,7 @@ class PartialDistanceMatrix:
     they are asked for. If pahmm is set to True, then distances are computed using
     the pahmm library.
     '''
-    def __init__(self, msa, distance_fcn, verbose=[]):
+    def __init__(self, msa, distance_fcn):
         '''
         The constructor initializes the distance matrix as a dict with dicts so that
         we can have distances as self.dm[t1][t2] elements. If no distance has been estimated to
@@ -35,10 +36,6 @@ class PartialDistanceMatrix:
             self._dm[t] = dict()
             self._dm[t][t] = 0.0 # Used in the dnctree_k algo
         self._n_distances_computed = 0
-        if verbose:
-            self.verbose = verbose
-        else:
-            self.verbose = []
 
 
     def get(self, t1, t2):
@@ -170,17 +167,13 @@ class PartialDistanceMatrix:
 #            print(f'dnctree: {t1}, {t2}: {d}')
             return d
 
-        supress_warnings = 'supress_warnings' in self.verbose
-
         try:
             N = self.msa.count_pairs(t1, t2)
         except dnc.NoSharedCharactersError:
-            if not supress_warnings:
-                print(f'No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to maximal distance.', file=sys.stderr)
+            logging.info(f'No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to maximal distance.', file=sys.stderr)
             return self._maximal_distance
         except dnc.AllCharactersDifferentError:
-            if not supress_warnings:
-                print(f'All characters shared by {t1} and {t2}, are different. Defaulting to maximal distance.', file=sys.stderr)
+            logging.info(f'All characters shared by {t1} and {t2}, are different. Defaulting to maximal distance.', file=sys.stderr)
             return self._maximal_distance
 
         distance = self._distance_function(N)
@@ -199,7 +192,7 @@ class PartialDistanceMatrix:
         fraction_work = actual_work / normal_work
         return actual_work, fraction_work, n
 
-    def print_progress(self):
+    def log_progress(self):
         '''
         Based on how many internal nodes we have defined, we can estimate how much of the final tree we have reconstructed.
         This function writes a simple statement about problem completion based on that.
@@ -207,4 +200,4 @@ class PartialDistanceMatrix:
         if self._internal_vertex_counter > self._last_progress: # Avoid redundant progress information
             self._last_progress = self._internal_vertex_counter
             progress = 100 * self._internal_vertex_counter / (self.n_taxa - 2)
-            print(f'Completion: {progress:.1f} %', file=sys.stderr, flush=True)
+            logging.info(f'Completion: {progress:.1f} %')

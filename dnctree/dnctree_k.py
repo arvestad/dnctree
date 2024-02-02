@@ -38,13 +38,12 @@ def nj_selection_function_with_weights(dm, current_leaves):
     return best_so_far
 
 
-def dnc_neighborjoining_with_weights(dm, taxa, verbose=[]):
+def dnc_neighborjoining_with_weights(dm, taxa):
     """
     An implementation of NJ meant to compute base cases in dnctree.
 
     dm:       a PartialDistanceMatrix instance
     taxa:     a list of identifiers (part of dm) to infer the tree for
-    verbose:  boolean, whether to print extra info to stderr
     """
     t = Tree()
     if len(taxa) == 1:
@@ -60,8 +59,6 @@ def dnc_neighborjoining_with_weights(dm, taxa, verbose=[]):
             x, y, sum_x_to_others, sum_y_to_others = nj_selection_function_with_weights(
                 dm, current_leaves
             )
-            # if verbose:
-            #     print(f'Joining {x} and {y}', file=sys.stderr)
             other_taxa = current_leaves[:]
             other_taxa.remove(x)
             other_taxa.remove(y)
