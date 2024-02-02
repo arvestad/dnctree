@@ -1,4 +1,5 @@
 import itertools
+import logging
 import random
 import sys
 import textwrap
@@ -14,7 +15,6 @@ from dnctree.dnctree_k import dnc_tree_k
 
 dna_models = ["HKY", "JC"]
 
-
 def divide_n_conquer_tree(
     seq_data,
     model_name=None,
@@ -22,8 +22,7 @@ def divide_n_conquer_tree(
     max_clade_size=0.5,
     base_case_size=100,
     first_triple=None,
-    simple_alg=False,
-    verbose=[],
+    simple_alg=False
 ):
     """
     Input: An object with sequence data (for the input alignment or unaligned if using PaHMM),
@@ -36,7 +35,6 @@ def divide_n_conquer_tree(
                     with a triple. We require that the largest subproblem (clade) has at most this fraction of taxa.
     base_case_size: For clades with at most this many taxa, we just run NJ.
     simple_alg:      Use the algorithm which randomly chooses three taxa to guide setup of three subproblems.
-    verbose:        Whether to output a lot of unnecessary facts.
     """
     assert base_case_size >= 3  # This is truly a minimum
     assert max_clade_size >= 0.5  # Pointless to try smaller values
@@ -55,9 +53,7 @@ def divide_n_conquer_tree(
         datatype = type(seq_data)
         raise ValueError(f'Cannot handle input of type {datatype}')
 
-    dm = PartialDistanceMatrix(
-        seq_data, distance_fcn, verbose=verbose
-    )  # We will gradually add distances to this "matrix"
+    dm = PartialDistanceMatrix(seq_data, distance_fcn)  # We will gradually add distances to this "matrix"
 
     if simple_alg:
         t = dnc_tree_simple(dm,
@@ -66,7 +62,6 @@ def divide_n_conquer_tree(
                            max_clade_size, # Can be removed?
                            base_case_size,
                            first_triple,
-                           verbose,
                            )
     else:                       # Use Amy's work
         # Using the base_case_size as the core_size.
@@ -76,8 +71,7 @@ def divide_n_conquer_tree(
 
     actual_work, fraction_work, n = dm.estimate_computational_savings()
     comment = dm._computational_savings()
-    if "info" in verbose or "verbose" in verbose:
-        print(f"[{comment}]")
+    logging.info(f"{comment}")
     aux_info = {
         "distances-computed": actual_work,
         "fraction-computed-distances": round(fraction_work, 3),
@@ -98,7 +92,6 @@ def testing_divide_n_conquer(
     max_clade_size=0.5,
     base_case_size=100,
     first_triple=None,
-    verbose=[],
 ):
     """
     The purpose with this function is to be able to test the algorithm and
@@ -119,7 +112,6 @@ def testing_divide_n_conquer(
         max_clade_size,
         base_case_size,
         first_triple,
-        verbose,
     )
     return t
 
@@ -158,7 +150,6 @@ def dnc_tree_simple(
     max_clade_size,
     base_case_size,
     first_triple,
-    verbose=[],
     dnctree_k_algo=True,  # Runs the new algorithm if True, otherwise the original one.
 ):
     """
@@ -168,48 +159,43 @@ def dnc_tree_simple(
               distances are computed on-demand and "cached" with function registered
               in this object.
     taxa:     A list of identifiers (part of dm) to infer the tree for
-    verbose:  boolean, whether to print extra info to stderr
+    
 
     returns:  A Tree object.
     """
     if len(taxa) <= base_case_size:
-        if "verbose" in verbose:
-            print(f"Full NJ on {len(taxa)} taxa:", file=sys.stderr, flush=True)
-            print(_taxa_string_helper(taxa, 2), file=sys.stderr, flush=True)
-        t = dnc_neighborjoining(dm, taxa, verbose)
+        logging.debug(f"Full NJ on {len(taxa)} taxa:")
+        logging.debug(_taxa_string_helper(taxa, 2))
+        t = dnc_neighborjoining(dm, taxa)
         return t
     else:
         if first_triple is not None:
             t = first_triple
             c = clade_sort_taxa(dm, taxa, t[0], t[1], t[2])
         else:
-            t, c = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose)
+            t, c = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size)
         # t[i] are 3 taxa ids
         # c[i] are three lists of taxa representing what we think should be become a clade (c[i] together with t[i]).
 
         # Add an inner vertex v that connects c1, c2, and c3.
         v = dm.create_central_vertex(t, c)
-        if verbose:
-            taxa_string = _taxa_string_helper([t[0], t[1], t[2]], 0)
-            print(f"Recursing on subproblems induced by {taxa_string}", file=sys.stderr)
+        taxa_string = _taxa_string_helper([t[0], t[1], t[2]], 0)
+        logging.debug(f"Recursing on subproblems induced by {taxa_string}")
 
         # Recurse on cx+tx+v, for x in {1,2,3}.
         subtrees = [None, None, None]
         for i in range(3):
-            c[i].append(
-                v
-            )  # Ensure that the central vertex participates as a representative of the other clades
+            c[i].append(v)  # Ensure that the central vertex participates as a representative of the other clades
             subtrees[i] = dnc_tree_simple(
-                dm, c[i], max_n_attempts, max_clade_size, base_case_size, None, verbose
+                dm, c[i], max_n_attempts, max_clade_size, base_case_size, None
             )
-            if verbose:
-                dm.print_progress()
-        #            print(f't{i}:', subtrees[i], file=sys.stderr)
+
+            dm.log_progress()
         t_connected = connect_the_trees(subtrees, v)
         return t_connected
 
 
-def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose=[]):
+def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size):
     """
     Sample three taxa and see if they split the set of taxa not too unevenly. Repeat until the largest
     clade (out of three) is small enough or we have used our max number of attempts.
@@ -230,21 +216,15 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size, verbose=[]):
     )  # Initialize with worst possible subproblem size
     for i in range(max_n_attempts):
         v1, v2, v3 = random.sample(taxa, 3)  # Three taxa strings
-        if "verbose" in verbose:
-            taxa_string = _taxa_string_helper([v1, v2, v3], 0)
-            print(f"Attempt: {taxa_string}.", end="  ", file=sys.stderr, flush=True)
+        taxa_string = _taxa_string_helper([v1, v2, v3], 0)
+        logging.debug(f"Attempt: {taxa_string}.")
         c1, c2, c3 = clade_sort_taxa(
             dm, taxa, v1, v2, v3
         )  # Three groups of taxa: "clade wannabees"
         largest = max(
             len(c1), len(c2), len(c3)
         )  # Out of the three found clades, which one is largest?
-        if verbose:
-            print(
-                f"Clade sizes: {len(c1)}, {len(c2)}, and {len(c3)}",
-                file=sys.stderr,
-                flush=True,
-            )
+        logging.debug(f"Clade sizes: {len(c1)}, {len(c2)}, and {len(c3)}")
 
         if largest <= N:
             # Sample is good, so let's use it
@@ -308,13 +288,12 @@ def nj_selection_function(dm, current_leaves):
     return best_so_far
 
 
-def dnc_neighborjoining(dm, taxa, verbose=[]):
+def dnc_neighborjoining(dm, taxa):
     """
     An implementation of NJ meant to compute base cases in dnctree.
 
     dm:       a PartialDistanceMatrix instance
     taxa:     a list of identifiers (part of dm) to infer the tree for
-    verbose:  boolean, whether to print extra info to stderr
     """
     t = Tree()
     if len(taxa) == 1:
@@ -327,8 +306,6 @@ def dnc_neighborjoining(dm, taxa, verbose=[]):
         current_leaves = taxa[:]  # Slicing out a copy
         while len(current_leaves) > 3:
             x, y = nj_selection_function(dm, current_leaves)
-            # if verbose:
-            #     print(f'Joining {x} and {y}', file=sys.stderr)
             current_leaves.remove(x)
             current_leaves.remove(y)
             new_v = dm.create_representative_vertex(x, y, current_leaves)
