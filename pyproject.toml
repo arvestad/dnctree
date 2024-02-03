@@ -1,0 +1,48 @@
+[project]
+name = "dnctree"
+authors = [
+    {name = "Lars Arvestad", email = "arve@math.su.se"},
+    {name = "Amy Lee Jalenius", email = "amy.jalsenius@gmail.com"},
+]
+maintainers = [
+    {name = "Lars Arvestad", email = "arve@math.su.se"},
+]
+description = "Distance-based phylogeny inference using a randomised divide-and-conquer method"
+readme = "README.md"
+license = {text = "GNU General Public License v3 (GPLv3)"}
+classifiers = [
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Operating System :: OS Independent",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dynamic = ["version"]
+
+dependencies = [
+    "alv>=1.5",
+    "modelmatcher>=1.1.3",
+    "biopython>=1.81",
+    "ete3>=3.1.1",
+    "tree_matching_distance"
+]
+
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+
+[project.scripts]
+dnctree = "dnctree.main:main"
+
+
+[project.urls]
+homepage = "https://github.com/arvestad/dnctree"
+
+
+[tool.setuptools]
+packages = ["dnctree"]
+
+
+[tool.setuptools.dynamic]
+version = {attr = "dnctree.version.__version__"}
