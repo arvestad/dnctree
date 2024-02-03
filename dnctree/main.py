@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import os
 import sys
 import time
@@ -52,11 +53,14 @@ def cmd_line_args():
     ap.add_argument('-j', '--json-output', action='store_true',
                     help='Output in JSON format, as an object with fields. Key object is "tree".')
 
-    info = ap.add_argument_group('Diagnostic output')
-    info.add_argument('-i', '--info', action='store_true',
-                      help='Show some basic info about input and output.')
-    info.add_argument('--verbose', action='store_true',
-                      help='Output progress information')
+    info = ap.add_argument_group('Logging')
+    info.add_argument('-l', '--log-level', choices=['quiet', 'progress', 'verbose'],
+                      default='quiet',
+                      help="Level 'quiet', default, shows warnings and errors."
+                      "At level 'progress' you get progress information and more."
+                      "Level 'verbose' shows you more algorithmic details and is probably more than you want to see.")
+    info.add_argument('--log-file',
+                      help='Name a file to send logging info to.')
 
     info.add_argument('-w', '--supress-warnings', action='store_true',
                       help='Do not warn about sequence pairs not sharing columns '
@@ -103,20 +107,20 @@ def check_args(args):
         if args.max_clade_size <= 0.01:
             sys.exit('Error: --max-clade-size cannot be that small')
         elif args.max_clade_size > 1.0:
-            print('Warning: --max-clade-size cannot be that large, changing to 1.0', file=sys.stderr)
+            logging.warning('--max-clade-size cannot be that large, changing to 1.0')
             args.max_clade_size = 1.0
 
         if args.base_case_size < 3:
             sys.exit('Error: --base-case-size must be at least 3.')
 
         if args.max_n_attempts < 1:
-            print('Warning: --max-n-attempts cannot be smaller than 1. '
-                  'Setting that parameter to 1 and continuing.', file=sys.stderr)
+            logging.warning('--max-n-attempts cannot be smaller than 1. '
+                            'Setting that parameter to 1 and continuing.')
             args.max_n_attempts = 1
 
         if 'DNCTREE_TESTING' in os.environ:
             if args.alg_testing:
-                run_alg_testing(args, verbosity)
+                run_alg_testing(args)
                 sys.exit()
 
         if args.secret_developer_options:
@@ -137,14 +141,15 @@ def main_load_data_and_model(args):
     we catch several different exceptions and give appropriate (?) feedback.
     '''
     try:
+        logging.info(f'Reading data from {args.infile}')
         if args.pahmm:
             if not pahmm_available():
-                print("Could not use '--pahmm' because the pahmm library is not available.", file=sys.stderr)
-                print("To install pahmm, run 'python3 -m pip install pahmm'.", file=sys.stderr)
+                logging.critical("Could not use '--pahmm' because the pahmm library is not available."
+                                "To install pahmm, run 'python3 -m pip install pahmm'.")
                 sys.exit(1)
             model=args.pahmm
             model_name = args.pahmm
-            seq_data = MSApaHMM.from_file(args.infile, model, verbosity)
+            seq_data = MSApaHMM.from_file(args.infile, model)
         else:
             if args.format == 'guess':
                 inputformat = guess_format(args.infile)
@@ -157,47 +162,57 @@ def main_load_data_and_model(args):
                 model_name = args.model
         return seq_data, model_name
     except KeyboardInterrupt:
-        sys.exit()
+        sys.exit(17)
     except FileNotFoundError:
+        logging.critical(f'Could not read file "{args.infile}"')
         sys.exit(f'Could not read file "{args.infile}"')
     except AlvPossibleFormatError:
+        logging.critical(f'File "{args.infile}" does not look like an alignment')
         sys.exit(f'File "{args.infile}" does not look like an alignment')
     except PAHMMError as e:
+        logging.critical(f'Error from paHMM: {e}')
         sys.exit(f'Error from paHMM: {e}')
     except Exception as e:
-        print('Error when reading data in dnctree:', e, file=sys.stderr)
-        traceback.print_exc()
+        logging.critical(f'Error when reading data in dnctree: {e}')
         sys.exit(1)
+
+
+def logging_details(args):
+    if args.log_level == 'quiet':
+        level = logging.WARNING
+    if args.log_level == 'progress':
+        level = logging.INFO
+    elif args.log_level == 'verbose':
+        level = logging.DEBUG
+    else:
+        sys.exit('Not a logging level')
+
+    if args.log_file:
+        logging.basicConfig(filename=args.log_file, level=level, format='%(levelname)s %(asctime)s: %(message)s')
+    else:
+        logging.basicConfig(stream=sys.stderr, level=level, format='%(levelname)s %(asctime)s: %(message)s')
 
        
 def main():
     args = cmd_line_args()
+    logging_details(args)
     check_args(args)
-
-    verbosity = []              # TODO: Start using the logging module instead
-    if args.info:
-        verbosity.append('info')
-    if args.verbose:
-        verbosity.append('verbose')
-    if args.supress_warnings:
-        verbosity.append('supress_warnings')
 
     start_time = time.perf_counter()
     seq_data, model_name = main_load_data_and_model(args)
 
     try:
-        if args.verbose:
-            n = len(seq_data.taxa())
-            print(f'Input has {n} taxa.', file=sys.stderr)
+        n = len(seq_data.taxa())
+        logging.info(f'Input has {n} taxa.')
 
         t, aux_info = divide_n_conquer_tree(seq_data, model_name=model_name,
                                   max_n_attempts=args.max_n_attempts,
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
                                   first_triple=args.first_triple,
-                                  simple_alg=args.simple,
-                                  verbose=verbosity)
+                                  simple_alg=args.simple)
 
+        logging.info('Done.')
         stop_time = time.perf_counter()
         if args.json_output:
             aux_info['computing-time (s)'] = stop_time - start_time
@@ -208,9 +223,9 @@ def main():
         sys.exit(f'A bug has occured. Please report an issue on '
                  f'http://github.com/arvestad/dnctree, and include sample data.')
     except KeyboardInterrupt:
-        sys.exit()
+        sys.exit(17)
     except Exception as e:
-        print('Error in dnctree:', e, file=sys.stderr)
+        logging.critical(f'Error in dnctree: {e}')
         traceback.print_exc()
         sys.exit(2)
 

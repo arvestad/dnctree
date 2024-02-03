@@ -5,6 +5,7 @@ from Bio.Seq import Seq
 
 import alv.alignment
 import itertools as it
+import logging
 import numpy as np
 import sys
 
@@ -147,18 +148,16 @@ else:
 
 
         @classmethod
-        def from_file(cls, filename, model, verbosity=[]):
+        def from_file(cls, filename, model):
             '''
             Instantiate a holder for sequence data in the PAHMM module from the given filename.
             '''
             be = BandingEstimator()
-            if verbosity:
-                print('Using paHMM for distance estimation. Note: accepts only unaligned sequences.', file=sys.stderr)
-                print(f"Reading '{filename}'...", file=sys.stderr)
+            logging.info('Using paHMM for distance estimation. Note: accepts only unaligned sequences.', file=sys.stderr)
+            logging.info(f"Reading '{filename}'...", file=sys.stderr)
             be.set_file_input(filename)
 
-            if verbosity:
-                print(f"Using {model} as model. Estimating parameters and rough pairwise distances.", file=sys.stderr)
+            logging.info(f"Using '{model}' as model. Estimating parameters and rough pairwise distances.", file=sys.stderr)
 
             sequence_type = 'unknown'
             if model in ['HKY85', 'GTR']:
@@ -170,8 +169,7 @@ else:
 
             #        seq_data = cls(be.execute_wag_model())
             seq_data = cls(be.apply_model(model), sequence_type=sequence_type)
-            if verbosity:
-                print("paHMM initialization done.", file=sys.stderr)
+            logging.info("paHMM initialization done.", file=sys.stderr)
             return seq_data
 
         def taxa(self):
