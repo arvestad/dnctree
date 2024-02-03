@@ -15,12 +15,15 @@ for some examples!
 
 ## Algorithms
 
-There are currently two algorithm versions of implemented. The 'simple' algorithms (see
-option `--simple`) is described in a [biorXiv](https://doi.org/10.1101/2023.10.11.561902) preprint.
-The default algorithm is slower but seems as accurate as Neighbor-Joining in our experiments so far
-(and Neighbor-Joining is even slower).
+There are currently two algorithm versions implemented in dnctree. 
 
-Both algorithms are using Divide-and-Conquer. Problem instances with less sequences than
+- The default algorithm, 'core tree', seems to be as accurate as Neighbor-Joining in our experiments
+  so far, but scales much better than Neighbor-Joining. We have submitted a paper on this algorithm.
+- The 'simple' algorithms (see option `--simple`) is much faster, but has much worse accuracy than
+  the core tree algorithm. The simple algorithm is described in a
+  [biorXiv](https://doi.org/10.1101/2023.10.11.561902) preprint.
+
+Both algorithms use Divide-and-Conquer. Problem instances with fewer sequences than
 what is given by the "base-case size", 100 by default, are handled by Neighbor-Joining
 and larger instances are partitioned and handled recursively. 
 
@@ -62,3 +65,8 @@ $ dnctree --json-output --base-case-size 10 testdata/s83_L500.phylip
     "computing-time": 0.907991542
 }
 ```
+
+# Credits
+
+* Amy Lee Jalsenius developed and implemented the "core tree" algorithm which is now the default.
+* Mazen Mardini added PaHMM code (see `https://github.com/marbogusz/paHMM-Tree`), enabling experiments.
