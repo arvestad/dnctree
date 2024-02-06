@@ -87,11 +87,11 @@ def divide_n_conquer_tree(
 
 
 def testing_divide_n_conquer(
-    model,
-    max_n_attempts=100,
-    max_clade_size=0.5,
-    base_case_size=100,
-    first_triple=None,
+        model,
+        algorithm='core-tree',
+        max_n_attempts=100,
+        max_clade_size=0.5,
+        base_case_size=100
 ):
     """
     The purpose with this function is to be able to test the algorithm and
@@ -105,14 +105,23 @@ def testing_divide_n_conquer(
     Other parameters are the same as for "divide_n_conquer".
     """
 
-    t = dnc_tree_simple(
-        model,
-        model.taxa,
-        max_n_attempts,
-        max_clade_size,
-        base_case_size,
-        first_triple,
-    )
+    if algorithm == 'core-tree':
+        t = dnc_tree_k(
+            model,
+            model.taxa,
+            base_case_size,
+            base_case_size
+        )
+    elif algorithm == 'simple':
+        t = dnc_tree_simple(
+            model,
+            model.taxa,
+            max_n_attempts,
+            max_clade_size,
+            base_case_size,
+        )
+    else:
+        sys.exit(f'Programming error: algorithm {algorithm} is not implemented.')
     return t
 
 
@@ -148,9 +157,7 @@ def dnc_tree_simple(
     taxa,
     max_n_attempts,
     max_clade_size,
-    base_case_size,
-    first_triple,
-    dnctree_k_algo=True,  # Runs the new algorithm if True, otherwise the original one.
+    base_case_size
 ):
     """
     The core algorithm

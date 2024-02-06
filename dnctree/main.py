@@ -88,10 +88,17 @@ def cmd_line_args():
         algtesting.add_argument('--alg-testing', type=float,
                                 help='Enables algorithm evaluation. The infile is read as model tree, '
                                      'defining distance, and the parameter to this option is the randomised error.')
+        algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'core-tree'],
+                                default='core-tree',
+                                help='Decide which algorithm to test')
         algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
                                 help='Write a comma-separated list of base-case sizes')
         algtesting.add_argument('--alg-testing-nj', action='store_true',
                                 help='Compare with NJ. This option is dependent on --alg-testing.')
+        algtesting.add_argument('--alg-testing-err-distribution', default='uniform', choices=['uniform', 'normal'],
+                                help='Decide wether to use U[-eps, eps] or N(0, eps) for the error term.'
+                                     'I.e., uniform or normal distribution around zero, and eps is the parameter to --alg-testing.'
+                                     'Note that distances are not allowed to be zero, so the error term is conditioned.')
 
     args = ap.parse_args()
     return args
@@ -104,6 +111,10 @@ def check_args(args):
     '''
 
     try:
+        if args.secret_developer_options:
+            print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
+            sys.exit(0)
+
         if args.max_clade_size <= 0.01:
             sys.exit('Error: --max-clade-size cannot be that small')
         elif args.max_clade_size > 1.0:
@@ -122,10 +133,6 @@ def check_args(args):
             if args.alg_testing:
                 run_alg_testing(args)
                 sys.exit()
-
-        if args.secret_developer_options:
-            print('Set the environment variable DNCTREE_TESTING to enable some additional developer options.')
-            sys.exit(0)
     except KeyboardInterrupt:
         sys.exit()
 
@@ -180,12 +187,12 @@ def main_load_data_and_model(args):
 def logging_details(args):
     if args.log_level == 'quiet':
         level = logging.WARNING
-    if args.log_level == 'progress':
+    elif args.log_level == 'progress':
         level = logging.INFO
     elif args.log_level == 'verbose':
         level = logging.DEBUG
     else:
-        sys.exit('Not a logging level')
+        sys.exit(f'Not a logging level: {args.log_level}')
 
     if args.log_file:
         logging.basicConfig(filename=args.log_file, level=level, format='%(levelname)s %(asctime)s: %(message)s')
@@ -209,7 +216,6 @@ def main():
                                   max_n_attempts=args.max_n_attempts,
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
-                                  first_triple=args.first_triple,
                                   simple_alg=args.simple)
 
         logging.info('Done.')
