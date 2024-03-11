@@ -57,12 +57,12 @@ def divide_n_conquer_tree(
 
     if simple_alg:
         t = dnc_tree_simple(dm,
-                           seq_data.taxa(),
-                           max_n_attempts, # Can be removed?
-                           max_clade_size, # Can be removed?
-                           base_case_size,
-                           first_triple,
-                           )
+                            seq_data.taxa(),
+                            max_n_attempts, # Can be removed?
+                            max_clade_size, # Can be removed?
+                            base_case_size,
+                            first_triple,
+                            )
     else:                       # Use Amy's work
         # Using the base_case_size as the core_size.
         t = dnc_tree_k(
@@ -153,11 +153,12 @@ def choose_distance_function(seqtype, model_name=None):
 
 
 def dnc_tree_simple(
-    dm,
-    taxa,
-    max_n_attempts,
-    max_clade_size,
-    base_case_size
+        dm,
+        taxa,
+        max_n_attempts,
+        max_clade_size,
+        base_case_size,
+        first_triple=None
 ):
     """
     The core algorithm
