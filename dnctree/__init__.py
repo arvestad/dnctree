@@ -8,8 +8,8 @@ from modelmatcher import RateMatrix
 from dnctree.msa import MSA, MSApaHMM
 from dnctree.tree import Tree
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree.distances import ml_distance_estimate
-
+from dnctree.distances import ml_distance_estimate, kimura_distance
+import dnctree.exceptions as dnc
 from dnctree.dnctree_k import dnc_tree_k
 
 
@@ -135,17 +135,21 @@ def choose_distance_function(seqtype, model_name=None):
                 'kimura' is also an acceptable string.
     """
     if seqtype == "aa":
-        chosen_model = "WAG"  # Standard choice
         if model_name:  # Replace the standard choice
-            if model_name in dna_models:
-                raise Exception(
-                    "You have requested a DNA model for amino acid sequences."
-                )
-            else:
-                chosen_model = model_name
-        model = RateMatrix.instantiate(chosen_model)
-        distance_fcn = lambda N: ml_distance_estimate(model, N)  # XXX Correct call?
+            chosen_model = model_name
+        else:
+            chosen_model = "WAG"  # Standard choice
+        if model_name in dna_models:
+            raise Exception(
+                "You have requested a DNA model for amino acid sequences."
+            )
+        elif model_name == 'kimura':
+            distance_fcn = lambda N: kimura_distance(N)
+        else:
+            model = RateMatrix.instantiate(chosen_model)
+            distance_fcn = lambda N: ml_distance_estimate(model, N)  # XXX Correct call?
         return distance_fcn, chosen_model
+
     elif seqtype == "dna":
         raise dnc.UnknownModel("DNA models not yet implemented, sorry.")
     else:
