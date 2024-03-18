@@ -113,7 +113,7 @@ def ml_distance_estimate_arve(model, N, start_dist=None):
     return d
 
 
-def old_ml_distance_estimate_scipy(model, N, start_dist=None):
+def ml_distance_estimate_scipy(model, N, start_dist=None):
     '''
     Same as ml_distance_estimate, but using the "bounded" method in SciPy (really Brent's, apparently).
     '''
@@ -124,7 +124,7 @@ def old_ml_distance_estimate_scipy(model, N, start_dist=None):
     return res.x
 
 
-def ml_distance_estimate_scipy(model, N, start_dist=None):
+def experimental_ml_distance_estimate_scipy(model, N, start_dist=None):
     '''
     Same as ml_distance_estimate, but using the "bounded" method in SciPy (really Brent's,
     apparently), and Kimura's heuristic in a first step to determine suitable bounds.
