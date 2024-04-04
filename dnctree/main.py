@@ -84,8 +84,9 @@ def cmd_line_args():
                        help='This option shows how to access secret expert developer options')
 
     if 'DNCTREE_TESTING' in os.environ:
-        algtesting = ap.add_argument_group('Development options', 'Secret option setup.')
-        algtesting.add_argument('--alg-testing', type=float,
+        algtesting = ap.add_argument_group('Developer options', 'Secret option setup, '
+                                           'only activated when environment variable DNCTREE_TESTING is set.')
+        algtesting.add_argument('--alg-testing', metavar='ERROR', type=float,
                                 help='Enables algorithm evaluation. The infile is read as model tree, '
                                      'defining distance, and the parameter to this option is the randomised error.')
         algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'core-tree'],
@@ -93,6 +94,8 @@ def cmd_line_args():
                                 help='Decide which algorithm to test')
         algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
                                 help='Write a comma-separated list of base-case sizes')
+        algtesting.add_argument('--alg-testing-matrix',
+                                help='Specify a Phylip distance matrix file to read distances from.')
         algtesting.add_argument('--alg-testing-nj', action='store_true',
                                 help='Compare with NJ. This option is dependent on --alg-testing.')
         algtesting.add_argument('--alg-testing-err-distribution', default='uniform', choices=['uniform', 'normal'],
@@ -130,7 +133,7 @@ def check_args(args):
             args.max_n_attempts = 1
 
         if 'DNCTREE_TESTING' in os.environ:
-            if args.alg_testing:
+            if args.alg_testing is not None:
                 run_alg_testing(args)
                 sys.exit()
     except KeyboardInterrupt:

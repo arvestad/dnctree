@@ -32,3 +32,37 @@ class TestDistances(unittest.TestCase):
             d = D.ml_distance_estimate(wag, N)
 #            print(f'd = {d}, t={t}, abs(t-d) = {abs(t-d)}')
             self.assertTrue(abs(t - d) < 0.1) # Plausible mistake
+
+
+from dnctree.algtesting import TestingFullDistanceMatrix
+class TestDistMatrixReading(unittest.TestCase):
+    '''
+    This class tests the class TestingFullDistanceMatrix,
+    which is only used for algorithm evaluation when
+    there is a distance matrix available (e.g.,
+    using fastprot). 
+    '''
+
+    def test_read_matrix(self):
+        '''
+        Read matrix from file and verify it.
+        '''
+        dm = TestingFullDistanceMatrix('five.tree', 'five.distmatrix')
+        self.assertAlmostEqual(dm.get('Alpha', 'Alpha'), 0.0,    4)
+
+        self.assertAlmostEqual(dm.get('Alpha', 'Beta'),  0.2997, 4)
+        self.assertAlmostEqual(dm.get('Alpha', 'Gamma'), 0.7820, 4)
+        self.assertAlmostEqual(dm.get('Alpha', 'Delta'), 1.1716, 4)
+        self.assertAlmostEqual(dm.get('Alpha', 'Epsilon'), 1.4617, 4)
+
+        self.assertAlmostEqual(dm.get('Beta', 'Alpha'),  0.2997, 4)
+        self.assertAlmostEqual(dm.get('Gamma', 'Alpha'), 0.7820, 4)
+        self.assertAlmostEqual(dm.get('Delta', 'Alpha'), 1.1716, 4)
+        self.assertAlmostEqual(dm.get('Epsilon', 'Alpha'), 1.4617, 4)        
+
+        self.assertAlmostEqual(dm.get('Epsilon', 'Beta'), 0.5653, 4)        
+        self.assertAlmostEqual(dm.get('Beta', 'Epsilon'), 0.5653, 4)        
+        
+        
+        
+    
