@@ -10,7 +10,10 @@ from tree_matching_distance import distance as matching_distance
 
 
 def run_alg_testing(args):
-    dt = TestingPartialDistanceMatrix(args.infile, args.alg_testing, args.alg_testing_err_distribution)
+    if args.alg_testing_matrix:
+        dt = TestingFullDistanceMatrix(args.infile, args.alg_testing_matrix)
+    else:
+        dt = TestingPartialDistanceMatrix(args.infile, args.alg_testing, args.alg_testing_err_distribution)
     rf_dnc_list = []
     tm_dnc_list = []
     for base_case_size in map(int, args.alg_testing_base_case_sizes.split(',')):
@@ -95,3 +98,48 @@ class TestingPartialDistanceMatrix(PartialDistanceMatrix):
     def get(self, t1, t2):
         return self._dm[t1][t2]
 
+
+class TestingFullDistanceMatrix(PartialDistanceMatrix):
+    '''
+    Test with an already computed full distance matrix,
+    read from a file.
+
+    It is assumed it is a full square matrix. 
+    '''
+    def __init__(self, treefile, matrixfile):
+        self.read_matrix(matrixfile)
+
+        # Redundant and stupid, but seemed easy to read taxa from tree file
+        # If nothing else, it is a test of whether we read the right files.
+        self._dt = ete3.Tree(treefile)
+        self.taxa = [taxon.name for taxon in self._dt]
+        self.n_taxa = len(self.taxa)
+
+        self._internal_vertex_counter = 0
+        self._last_progress = 0
+        self._n_distances_computed = 0        
+
+        
+    def read_matrix(self, matrixfile):
+        self._dm = {}
+        prelim_dm = {}
+        with open(matrixfile) as mfile:
+            try:
+                n_lines = int(mfile.readline())
+            except:
+                raise ValueError(f'Could not parse the first line of "{matrixfile}" as an integer. Is it a Phylip distance matrix?')
+            for line in mfile:
+                one_taxa, *dist_strs = line.split()
+                prelim_dm[one_taxa] = dist_strs
+                self._dm[one_taxa] = {}
+
+            for taxa1, dist_strs in prelim_dm.items():
+                for taxa2, dist_str in zip(prelim_dm.keys(), dist_strs):
+                    try:
+                        self._dm[taxa1][taxa2] = float(dist_str)
+                    except ValueError:
+                        raise ValueError(f'Error in distance matrix "{matrixfile}". Could not parse "{dist_str}" as a float.')
+
+        
+    def get(self, t1, t2):
+        return self._dm[t1][t2]
