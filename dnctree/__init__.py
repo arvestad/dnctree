@@ -166,7 +166,7 @@ def dnc_tree_simple(
     dm:       A PartialDistanceMatrix instance, to draw distances from. Note that
               distances are computed on-demand and "cached" with function registered
               in this object.
-    taxa:     A list of identifiers (part of dm) to infer the tree for
+    taxa:     A list of identifiers (part of dm) to infer the tree for.
     
 
     returns:  A Tree object.

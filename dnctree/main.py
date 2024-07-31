@@ -10,7 +10,7 @@ from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
 from dnctree.pahmm_adaptor import pahmm_available
 from dnctree import divide_n_conquer_tree, choose_distance_function
-from dnctree.algtesting import run_alg_testing
+from dnctree.algtesting import run_alg_testing, run_dnctree_with_matrix
 from dnctree.version import __version__ as dnctree_version
 
 if pahmm_available():
@@ -46,10 +46,6 @@ def cmd_line_args():
     ap.add_argument('-s', '--simple', action='store_true',
                     help='Use the simple algorithm, which uses three taxa and sorts the rest into three'
                     'subproblems. Worse quality than the standard algorithm.')
-    ap.add_argument('--pahmm', metavar='pahmm_model', choices=pahmm_aa_models+pahmm_dna_models,
-                    help='Experimental: Use paHMM library to calculate distances using one of the given models.'
-                    'Note that paHMM implements a different set of models. Model parameters for'
-                    'the DNA models, HKY85 and GTR, are inferred.')
     ap.add_argument('-j', '--json-output', action='store_true',
                     help='Output in JSON format, as an object with fields. Key object is "tree".')
 
@@ -70,7 +66,7 @@ def cmd_line_args():
 
     group = ap.add_argument_group('Expert options', 'You need to understand the dnctree '
                                                     'algorithm to tweak these options in a meaningful way.')
-    group.add_argument('--base-case-size', default=100, type=int, metavar='int',
+    group.add_argument('--base-case-size', default=100, type=int, metavar='INT',
                        help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
     group.add_argument('--max-n-attempts', type=int, default=1, metavar='int',
                        help='Make at most this many attempts. Default: %(default)s')
@@ -83,6 +79,15 @@ def cmd_line_args():
     group.add_argument('--secret-developer-options', action='store_true',
                        help='This option shows how to access secret expert developer options')
 
+
+    experimental = ap.add_argument_group('Experimental options', 'Avoid unless you know what this is about.')
+    experimental.add_argument('--pahmm', metavar='pahmm_model', choices=pahmm_aa_models+pahmm_dna_models,
+                              help='Use paHMM library to calculate distances using one of the given models.'
+                              'Note that paHMM implements a different set of models. Model parameters for'
+                              'the DNA models, HKY85 and GTR, are inferred.')
+    
+
+
     if 'DNCTREE_TESTING' in os.environ:
         algtesting = ap.add_argument_group('Developer options', 'Secret option setup, '
                                            'only activated when environment variable DNCTREE_TESTING is set.')
@@ -94,14 +99,15 @@ def cmd_line_args():
                                 help='Decide which algorithm to test')
         algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
                                 help='Write a comma-separated list of base-case sizes')
-        algtesting.add_argument('--alg-testing-matrix',
-                                help='Specify a Phylip distance matrix file to read distances from.')
         algtesting.add_argument('--alg-testing-nj', action='store_true',
                                 help='Compare with NJ. This option is dependent on --alg-testing.')
         algtesting.add_argument('--alg-testing-err-distribution', default='uniform', choices=['uniform', 'normal'],
                                 help='Decide wether to use U[-eps, eps] or N(0, eps) for the error term.'
                                      'I.e., uniform or normal distribution around zero, and eps is the parameter to --alg-testing.'
                                      'Note that distances are not allowed to be zero, so the error term is conditioned.')
+        algtesting.add_argument('--alg-testing-matrix', metavar='MATRIXFILE',
+                                help='Specify a Phylip distance matrix file to read distances from.'
+                                     '"Disconnected" from the other secret testing options.')
 
     args = ap.parse_args()
     return args
@@ -133,7 +139,14 @@ def check_args(args):
             args.max_n_attempts = 1
 
         if 'DNCTREE_TESTING' in os.environ:
-            if args.alg_testing is not None:
+            if args.alg_testing_matrix is not None:
+                t, aux_info = run_dnctree_with_matrix(args)
+                if args.json_output:
+                    print(make_json_string(t, aux_info, args))
+                else:
+                    print(t)                
+                sys.exit()
+            elif args.alg_testing is not None:
                 run_alg_testing(args)
                 sys.exit()
     except KeyboardInterrupt:

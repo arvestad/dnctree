@@ -6,6 +6,7 @@ import sys
 
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree import testing_divide_n_conquer
+from dnctree.dnctree_k import dnc_tree_k
 from tree_matching_distance import distance as matching_distance
 
 
@@ -106,13 +107,11 @@ class TestingFullDistanceMatrix(PartialDistanceMatrix):
 
     It is assumed it is a full square matrix. 
     '''
-    def __init__(self, treefile, matrixfile):
+    def __init__(self, matrixfile):
         self.read_matrix(matrixfile)
+        assert type(self._dm) == dict
 
-        # Redundant and stupid, but seemed easy to read taxa from tree file
-        # If nothing else, it is a test of whether we read the right files.
-        self._dt = ete3.Tree(treefile)
-        self.taxa = [taxon.name for taxon in self._dt]
+        self.taxa = [taxon for taxon in self._dm.keys()]
         self.n_taxa = len(self.taxa)
 
         self._internal_vertex_counter = 0
@@ -143,3 +142,27 @@ class TestingFullDistanceMatrix(PartialDistanceMatrix):
         
     def get(self, t1, t2):
         return self._dm[t1][t2]
+
+
+def run_dnctree_with_matrix(args):
+    matrix = TestingFullDistanceMatrix(args.alg_testing_matrix)
+
+    base_case_size = args.base_case_size
+    if args.simple:
+
+        t = dnc_tree_simple(matrix, matrix.taxa, 100, 1.0, base_case_size)
+    else:
+        t = dnc_tree_k(matrix, matrix.taxa, base_case_size, base_case_size)
+
+    n = len(matrix.taxa)
+    aux_info = {
+        "matrix_file": args.alg_testing_matrix,
+        "distances-computed": n*(n-1) // 2,
+        "fraction-computed-distances": 1.0,
+        "n-taxa": n,
+        "comment": 'dnctree run with a full distance matrix as input',
+    }
+
+    return t, aux_info
+    
+    
