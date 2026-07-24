@@ -3,10 +3,15 @@ import itertools
 import logging
 import random
 import sys
+import warnings
 
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.simple_algorithm import dnc_tree_simple
 from dnctree.dnctree_k import dnc_tree_k
+
+# tree_matching_distance's own __init__.py uses the deprecated pkg_resources
+# API for its version lookup; harmless, but noisy every run.
+warnings.filterwarnings("ignore", message=r"pkg_resources is deprecated.*", category=UserWarning)
 from tree_matching_distance import distance as matching_distance
 
 

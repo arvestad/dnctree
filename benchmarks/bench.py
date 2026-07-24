@@ -15,8 +15,13 @@ import statistics
 import subprocess
 import sys
 import time
+import warnings
 
 import ete3
+
+# tree_matching_distance's own __init__.py uses the deprecated pkg_resources
+# API for its version lookup; harmless, but noisy every run.
+warnings.filterwarnings("ignore", message=r"pkg_resources is deprecated.*", category=UserWarning)
 from tree_matching_distance import distance as matching_distance
 
 from dnctree.stupid_tree import caterpillar
