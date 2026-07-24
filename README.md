@@ -70,3 +70,4 @@ $ dnctree --json-output --base-case-size 10 testdata/s83_L500.phylip
 
 * Amy Lee Jalsenius developed and implemented the "core tree" algorithm which is now the default.
 * Mazen Mardini added PaHMM code (see `https://github.com/marbogusz/paHMM-Tree`), enabling experiments.
+  This integration has since been removed from dnctree.

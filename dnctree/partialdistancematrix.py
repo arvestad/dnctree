@@ -10,8 +10,7 @@ class PartialDistanceMatrix:
     because we are not going to compute all pairwise distances.
 
     This class pretends it is a distance matrix. Distances are computed on-demand, when
-    they are asked for. If pahmm is set to True, then distances are computed using
-    the pahmm library.
+    they are asked for.
     '''
     def __init__(self, msa, distance_fcn):
         '''

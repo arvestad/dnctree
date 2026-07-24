@@ -8,27 +8,17 @@ import traceback
 
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
-from dnctree.pahmm_adaptor import pahmm_available
 from dnctree import divide_n_conquer_tree
 from dnctree.algtesting import run_alg_testing
 from dnctree.version import __version__ as dnctree_version
-
-if pahmm_available():
-    from dnctree.msa import MSA, MSApaHMM
-    from pahmm import PAHMMError
-else:
-    from dnctree.msa import MSA 
-    class PAHMMError(Exception):
-        pass
+from dnctree.msa import MSA
 
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
 aa_default_model = aa_models[0]
-pahmm_aa_models = ['WAG', 'LG', 'JTT'] # PAHMM connection will likely be deleted
 
 dna_models =['JC', 'K2P']
 dna_default_model = dna_models[0]
-pahmm_dna_models = ['GTR', 'HKY85'] # PAHMM connection will likely be deleted
 
 def cmd_line_args():
     ap = argparse.ArgumentParser(description='Divide-and-conquer phylogenetic distance-based tree inference.')
@@ -46,10 +36,6 @@ def cmd_line_args():
     ap.add_argument('-s', '--simple', action='store_true',
                     help='Use the simple algorithm, which uses three taxa and sorts the rest into three'
                     'subproblems. Worse quality than the standard algorithm.')
-    ap.add_argument('--pahmm', metavar='pahmm_model', choices=pahmm_aa_models+pahmm_dna_models,
-                    help='Experimental: Use paHMM library to calculate distances using one of the given models.'
-                    'Note that paHMM implements a different set of models. Model parameters for'
-                    'the DNA models, HKY85 and GTR, are inferred.')
     ap.add_argument('-j', '--json-output', action='store_true',
                     help='Output in JSON format, as an object with fields. Key object is "tree".')
 
@@ -139,34 +125,22 @@ def check_args(args):
         
 def main_load_data_and_model(args):
     '''
-    The model is in part decided by the data. In case we want to try PaHMM, we have to deal with
-    that in a special way.
-
-    Returns: the sequence data (typically an MSA) and the name of the model to use.
+    Returns: the sequence data (an MSA) and the name of the model to use.
 
     There are several ways this function can go wrong due to user input and strange data, so
     we catch several different exceptions and give appropriate (?) feedback.
     '''
     try:
         logging.info(f'Reading data from {args.infile}')
-        if args.pahmm:
-            if not pahmm_available():
-                logging.critical("Could not use '--pahmm' because the pahmm library is not available."
-                                "To install pahmm, run 'python3 -m pip install pahmm'.")
-                sys.exit(1)
-            model=args.pahmm
-            model_name = args.pahmm
-            seq_data = MSApaHMM.from_file(args.infile, model)
+        if args.format == 'guess':
+            inputformat = guess_format(args.infile)
         else:
-            if args.format == 'guess':
-                inputformat = guess_format(args.infile)
-            else:
-                inputformat = args.format
-            alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
-            seq_data = MSA(alv_msa)
-            model_name = None
-            if args.model != 'guess':
-                model_name = args.model
+            inputformat = args.format
+        alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+        seq_data = MSA(alv_msa)
+        model_name = None
+        if args.model != 'guess':
+            model_name = args.model
         return seq_data, model_name
     except KeyboardInterrupt:
         sys.exit(17)
@@ -176,9 +150,6 @@ def main_load_data_and_model(args):
     except AlvPossibleFormatError:
         logging.critical(f'File "{args.infile}" does not look like an alignment')
         sys.exit(f'File "{args.infile}" does not look like an alignment')
-    except PAHMMError as e:
-        logging.critical(f'Error from paHMM: {e}')
-        sys.exit(f'Error from paHMM: {e}')
     except Exception as e:
         logging.critical(f'Error when reading data in dnctree: {e}')
         sys.exit(1)
@@ -241,7 +212,7 @@ def make_json_string(t, aux_info, args):
     info['version'] = f'dnctree {dnctree_version}'
     info['tree'] = str(t)
     info['infile'] = args.infile
-    info['aligned'] = not(args.pahmm)
+    info['aligned'] = True
     info['base-case-size'] = args.base_case_size
 
     for key, val in aux_info.items():

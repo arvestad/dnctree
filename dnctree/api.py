@@ -3,7 +3,7 @@ import logging
 from modelmatcher import RateMatrix
 
 import dnctree.exceptions as dncexc
-from dnctree.msa import MSA, MSApaHMM
+from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import ml_distance_estimate
 from dnctree.simple_algorithm import dnc_tree_simple
@@ -23,7 +23,7 @@ def divide_n_conquer_tree(
     simple_alg=False
 ):
     """
-    Input: An object with sequence data (for the input alignment or unaligned if using PaHMM),
+    Input: An object with sequence data for the input alignment,
            and the name of a evolutionary model.
     Returns: a tree as a Newick-formatted string.
 
@@ -43,10 +43,6 @@ def divide_n_conquer_tree(
             seq_data.type, model_name
         )
         data_description = f"{seq_data.type.upper()} alignment"
-    elif isinstance(seq_data, MSApaHMM):
-        distance_fcn = "not_needed_strangely_enough"  # Clearly a case of bad program structure. Should refactor.
-        chosen_model_name = model_name
-        data_description = f"Unaligned {seq_data.type.upper()} sequences"
     else:
         datatype = type(seq_data)
         raise ValueError(f'Cannot handle input of type {datatype}')
