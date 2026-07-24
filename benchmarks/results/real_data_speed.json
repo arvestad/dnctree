@@ -1,0 +1,73 @@
+{
+  "dnctree_version": "0.1.dev165+gfac0cebb2.d20260724",
+  "fastphylo_version": "0.1.0",
+  "n_reps": 5,
+  "results": [
+    {
+      "file": "s63_L50.phylip",
+      "n_taxa": 96,
+      "msa_width": 50,
+      "algorithm": "core-tree",
+      "time_seconds": {
+        "mean": 0.057715108606498686,
+        "min": 0.05682616698322818,
+        "max": 0.05967445898568258
+      }
+    },
+    {
+      "file": "s63_L50.phylip",
+      "n_taxa": 96,
+      "msa_width": 50,
+      "algorithm": "simple",
+      "time_seconds": {
+        "mean": 0.05817743338411674,
+        "min": 0.05744983296608552,
+        "max": 0.05952020798576996
+      }
+    },
+    {
+      "file": "s6_L100.phylip",
+      "n_taxa": 96,
+      "msa_width": 100,
+      "algorithm": "core-tree",
+      "time_seconds": {
+        "mean": 0.07019980819895863,
+        "min": 0.06961841695010662,
+        "max": 0.070776125008706
+      }
+    },
+    {
+      "file": "s6_L100.phylip",
+      "n_taxa": 96,
+      "msa_width": 100,
+      "algorithm": "simple",
+      "time_seconds": {
+        "mean": 0.06993099979590625,
+        "min": 0.0688136660028249,
+        "max": 0.07090224995044991
+      }
+    },
+    {
+      "file": "s83_L500.phylip",
+      "n_taxa": 96,
+      "msa_width": 500,
+      "algorithm": "core-tree",
+      "time_seconds": {
+        "mean": 0.11801450819475576,
+        "min": 0.11678816599305719,
+        "max": 0.11916662496514618
+      }
+    },
+    {
+      "file": "s83_L500.phylip",
+      "n_taxa": 96,
+      "msa_width": 500,
+      "algorithm": "simple",
+      "time_seconds": {
+        "mean": 0.11906062498455867,
+        "min": 0.11736883298726752,
+        "max": 0.12120474997209385
+      }
+    }
+  ]
+}

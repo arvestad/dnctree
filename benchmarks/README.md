@@ -59,3 +59,21 @@ rate matrix (matrix-exponential substitution). The DNA simulator and
 formulas self-validate (recover a known distance at large `n_sites`) before
 being trusted to judge fastphylo — the script aborts rather than reporting
 if that check fails.
+
+## Real-data end-to-end speed (`real_data_speed.py`)
+
+Neither of the above times a full, real run: `bench.py` reconstructs trees
+from synthetic already-computed distances (no real distance estimation
+happens at all), and `distance_accuracy.py` measures estimator accuracy,
+not speed. This one runs `divide_n_conquer_tree` end-to-end (both
+algorithms) on the real alignments already checked into `testdata/`, at a
+few different widths:
+
+```shell
+python benchmarks/real_data_speed.py
+python benchmarks/real_data_speed.py -o benchmarks/results/real_data_speed.json
+```
+
+This is the one that actually caught the ~3.9x speedup from fastphylo's
+`RateMatrix` caching fix (see the `fastphylo-py` repo) — a real, standing
+check for future fastphylo/dnctree changes on real data, not just that one.
