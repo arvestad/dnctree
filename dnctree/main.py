@@ -114,11 +114,6 @@ def check_args(args):
             logging.warning('--max-n-attempts cannot be smaller than 1. '
                             'Setting that parameter to 1 and continuing.')
             args.max_n_attempts = 1
-
-        if 'DNCTREE_TESTING' in os.environ:
-            if args.alg_testing:
-                run_alg_testing(args)
-                sys.exit()
     except KeyboardInterrupt:
         sys.exit()
 
@@ -175,6 +170,13 @@ def main():
     args = cmd_line_args()
     logging_details(args)
     check_args(args)
+
+    if 'DNCTREE_TESTING' in os.environ and args.alg_testing:
+        try:
+            run_alg_testing(args)
+        except KeyboardInterrupt:
+            sys.exit()
+        sys.exit()
 
     start_time = time.perf_counter()
     seq_data, model_name = main_load_data_and_model(args)
