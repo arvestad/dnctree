@@ -1,5 +1,6 @@
 import logging
 
+import fastphylo
 from modelmatcher import RateMatrix
 
 import dnctree.exceptions as dncexc
@@ -10,7 +11,7 @@ from dnctree.simple_algorithm import dnc_tree_simple
 from dnctree.dnctree_k import dnc_tree_k
 
 
-dna_models = ["HKY", "JC", "K2P"]  # Placeholder names: modelmatcher has no DNA rate matrices yet.
+dna_models = ["hamming", "jc", "k2p", "tn93"]  # fastphylo's DNA/RNA distance models.
 
 
 def divide_n_conquer_tree(
@@ -102,6 +103,30 @@ def choose_distance_function(seqtype, model_name=None):
         distance_fcn = lambda N: ml_distance_estimate(model, N)  # XXX Correct call?
         return distance_fcn, chosen_model
     elif seqtype in ("dna", "rna"):
-        raise dncexc.UnknownModel(f"{seqtype.upper()} models are not yet implemented, sorry.")
+        chosen_model = model_name or "k2p"  # fastphylo's own default
+        if chosen_model not in dna_models:
+            raise dncexc.UnknownModel(
+                f"'{chosen_model}' is not a known DNA/RNA model. Choose one of: {dna_models}."
+            )
+        fp_seq_type = fastphylo.SeqType.RNA if seqtype == "rna" else fastphylo.SeqType.DNA
+        distance_fcn = _fastphylo_nucleotide_distance(chosen_model, fp_seq_type)
+        return distance_fcn, chosen_model
     else:
         raise dncexc.UnknownModel(f"Not a valid sequence type: {seqtype}.")
+
+
+def _fastphylo_nucleotide_distance(model, fp_seq_type):
+    """
+    Build a distance function for DNA/RNA that delegates to fastphylo, computed
+    from the two taxa's actual sequences rather than a precomputed count matrix.
+    """
+    def compute(rec1, rec2):
+        aln = fastphylo.Alignment([
+            fastphylo.Sequence("t1", str(rec1.seq), seq_type=fp_seq_type),
+            fastphylo.Sequence("t2", str(rec2.seq), seq_type=fp_seq_type),
+        ])
+        dm = fastphylo.distance_matrix(aln, model=model)
+        return dm[0, 1]
+
+    compute.operates_on_sequences = True  # Tells PartialDistanceMatrix to skip count_pairs().
+    return compute

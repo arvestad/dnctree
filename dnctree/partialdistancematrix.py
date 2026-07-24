@@ -1,6 +1,5 @@
 import logging
 import math
-import sys
 import dnctree.exceptions as dnc
 
 
@@ -165,13 +164,22 @@ class PartialDistanceMatrix:
 #            print(f'dnctree: {t1}, {t2}: {d}')
             return d
 
+        if getattr(self._distance_function, "operates_on_sequences", False):
+            # E.g. the fastphylo-backed DNA/RNA distance functions, which need
+            # the actual sequences rather than a count matrix.
+            d = self._distance_function(self.msa[t1], self.msa[t2])
+            if math.isnan(d):
+                logging.info(f'Could not estimate a distance between {t1} and {t2} (no informative sites). Defaulting to maximal distance.')
+                return self._maximal_distance
+            return d
+
         try:
             N = self.msa.count_pairs(t1, t2)
         except dnc.NoSharedCharactersError:
-            logging.info(f'No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to maximal distance.', file=sys.stderr)
+            logging.info(f'No shared characters between {t1} and {t2}, so cannot estimate their distance. Defaulting to maximal distance.')
             return self._maximal_distance
         except dnc.AllCharactersDifferentError:
-            logging.info(f'All characters shared by {t1} and {t2}, are different. Defaulting to maximal distance.', file=sys.stderr)
+            logging.info(f'All characters shared by {t1} and {t2}, are different. Defaulting to maximal distance.')
             return self._maximal_distance
 
         distance = self._distance_function(N)
