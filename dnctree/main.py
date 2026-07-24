@@ -6,6 +6,7 @@ import sys
 import time
 import traceback
 
+import fastphylo
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
 from dnctree import divide_n_conquer_tree
@@ -13,6 +14,16 @@ from dnctree.algtesting import run_alg_testing
 from dnctree.version import __version__ as dnctree_version
 from dnctree.msa import MSA
 from dnctree.api import dna_models
+
+# Formats fastphylo can read directly (fast C++ parser). Anything else
+# (Nexus, Clustal) falls back to the alv/BioPython pipeline.
+FASTPHYLO_FORMATS = ('fasta', 'phylip', 'stockholm')
+
+FASTPHYLO_SEQTYPES = {
+    'aa': fastphylo.SeqType.Protein,
+    'dna': fastphylo.SeqType.DNA,
+    'rna': fastphylo.SeqType.RNA,
+}
 
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
@@ -129,8 +140,14 @@ def main_load_data_and_model(args):
             inputformat = guess_format(args.infile)
         else:
             inputformat = args.format
-        alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
-        seq_data = MSA(alv_msa)
+
+        if inputformat in FASTPHYLO_FORMATS:
+            fp_seq_type = FASTPHYLO_SEQTYPES.get(args.seqtype)  # None -> auto-detect
+            fp_alignment = fastphylo.read(args.infile, format=inputformat, seq_type=fp_seq_type)
+            seq_data = MSA.from_fastphylo(fp_alignment)
+        else:
+            alv_msa, _ = read_alignment(args.infile, args.seqtype, inputformat, None, None)
+            seq_data = MSA.from_alv(alv_msa)
         model_name = None
         if args.model != 'guess':
             model_name = args.model

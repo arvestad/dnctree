@@ -1,6 +1,5 @@
 import unittest
 
-import alv.alignment
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
@@ -15,7 +14,7 @@ def dna_msa(seqs):
     biopy_msa = MultipleSeqAlignment([])
     for i, s in enumerate(seqs):
         biopy_msa.append(SeqRecord(Seq(s), id=f'seq{i}'))
-    return MSA(alv.alignment.DnaAlignment(biopy_msa))
+    return MSA(biopy_msa, 'dna')
 
 
 class TestDnaDistance(unittest.TestCase):

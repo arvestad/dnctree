@@ -2,7 +2,7 @@ from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
-import alv.alignment
+import fastphylo
 import numpy as np
 
 import dnctree.exceptions as dnc
@@ -10,18 +10,19 @@ import dnctree.exceptions as dnc
 
 class MSA:
     '''
-    Storing multiple sequence alignments.
-    Using the "alv" MSA class because we get easy reading.
+    Storing multiple sequence alignments, backed by a BioPython alignment
+    internally regardless of how it was read in.
     '''
 
-    def __init__(self, alv_msa):
+    def __init__(self, biopy_alignment, seq_type):
         '''
-        alv_msa is the MSA retrieved from AlignIO.
+        biopy_alignment: a BioPython MultipleSeqAlignment.
+        seq_type:        'aa' or 'dna'.
         '''
-        self._msa = alv_msa.al  # Actual BioPython alignment object
-        self.msa_width = alv_msa.al.get_alignment_length()
-        self.type = alv_msa.type # 'aa', or 'dna'
-        self._taxa = list(alv_msa.accessions())
+        self._msa = biopy_alignment
+        self.msa_width = biopy_alignment.get_alignment_length()
+        self.type = seq_type # 'aa', or 'dna'
+        self._taxa = [record.id for record in biopy_alignment]
         self._id2int = dict()
 
         # Create a lookup table, mapping id to an integer
@@ -31,7 +32,7 @@ class MSA:
             idx += 1
 
         # Create translation table for sequences so that it is easy to create the N matrices
-        if alv_msa.type == 'aa':
+        if seq_type == 'aa':
             alphabet='ARNDCQEGHILKMFPSTWYV'
         else:
             alphabet='ACGT'
@@ -40,6 +41,26 @@ class MSA:
             for j in range(len(alphabet)):
                 self._pair_table[alphabet[i], alphabet[j]] = (i, j)
 
+
+    @classmethod
+    def from_alv(cls, alv_msa):
+        '''
+        Build an MSA from an alv-wrapped alignment. Used for formats
+        fastphylo's readers don't support (Nexus, Clustal).
+        '''
+        return cls(alv_msa.al, alv_msa.type)
+
+    @classmethod
+    def from_fastphylo(cls, fp_alignment):
+        '''
+        Build an MSA from a fastphylo Alignment (read via fastphylo's fast
+        FASTA/Phylip/Stockholm reader).
+        '''
+        biopy_msa = MultipleSeqAlignment([
+            SeqRecord(Seq(seq.data), id=seq.accession) for seq in fp_alignment
+        ])
+        seq_type = 'aa' if fp_alignment[0].seq_type == fastphylo.SeqType.Protein else 'dna'
+        return cls(biopy_msa, seq_type)
 
     @classmethod
     def from_seq_list(cls, seqs):
@@ -52,11 +73,7 @@ class MSA:
             acc = f'seq{i}'
             new_record = SeqRecord(Seq(s), id=acc)
             biopy_msa.append(new_record)
-        return cls(alv.alignment.AminoAcidAlignment(biopy_msa))         # Instantiate
-
-    @classmethod
-    def from_biopython(cls, msa):
-        pass
+        return cls(biopy_msa, 'aa')
 
     def taxa(self):
         return self._taxa
