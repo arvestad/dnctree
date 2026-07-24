@@ -1,6 +1,8 @@
-import itertools
 import random
 
+import fastphylo
+
+from dnctree.fastphylo_bridge import TaxaDistanceView, tree_from_fastphylo
 from dnctree.tree import Tree
 
 
@@ -8,34 +10,9 @@ from dnctree.tree import Tree
 ## Neighbor joining where edge weights are computed
 ################################################################################
 
-# Different from the version in `__init__.py` as this one calculates the edge
-# weights, adding them to the distance matrix.
-
-
-def nj_selection_function_with_weights(dm, current_leaves):
-    def sum_distances(a):
-        sum_for_a = 0
-        for b in current_leaves:
-            if a != b:
-                sum_for_a += dm.get(a, b)
-        return sum_for_a
-
-    row_sum = {}
-    for x in current_leaves:
-        row_sum[x] = sum_distances(x)
-
-    n_minus_2 = len(current_leaves) - 2
-    Q_ij_min = n_minus_2 * dm.get(
-        current_leaves[0], current_leaves[1]
-    )  # Arbitrary but safe starting value that won't be chosen.
-    best_so_far = None
-    for x, y in itertools.combinations(current_leaves, 2):
-        Q_ij = n_minus_2 * dm.get(x, y) - row_sum[x] - row_sum[y]
-        if best_so_far is None or Q_ij < Q_ij_min:
-            Q_ij_min = Q_ij
-            best_so_far = (x, y, row_sum[x], row_sum[y])
-
-    return best_so_far
+# Delegates to fastphylo's BioNJ for the actual reconstruction and branch
+# lengths; distances are still computed on-demand through dm, same as
+# elsewhere in dnctree.
 
 
 def dnc_neighborjoining_with_weights(dm, taxa):
@@ -54,41 +31,8 @@ def dnc_neighborjoining_with_weights(dm, taxa):
         ######### Possibly add distance in dm for the single edge
         return t
     else:
-        current_leaves = taxa[:]  # Slicing out a copy
-        while len(current_leaves) > 3:
-            x, y, sum_x_to_others, sum_y_to_others = nj_selection_function_with_weights(
-                dm, current_leaves
-            )
-            other_taxa = current_leaves[:]
-            other_taxa.remove(x)
-            other_taxa.remove(y)
-            new_v = dm.create_representative_vertex(x, y, other_taxa)
-
-            d_x_newv = 0.5 * dm.get(x, y) + (1 / (2 * (len(current_leaves) - 2))) * (
-                sum_x_to_others - sum_y_to_others
-            )
-            d_y_newv = dm.get(x, y) - d_x_newv
-            dm.set(x, new_v, d_x_newv)
-            dm.set(y, new_v, d_y_newv)
-
-            other_taxa.append(new_v)
-            t.add_edge(x, new_v)
-            t.add_edge(y, new_v)
-            current_leaves = other_taxa
-
-        c = dm.create_unique_vertex_id()
-        for leaf in current_leaves:
-            t.add_edge(leaf, c)
-        t.set_start_node(c)
-        x, y, z = current_leaves
-        d_xc = 0.5 * dm.get(x, y) + (1 / 2) * (dm.get(x, z) - dm.get(y, z))
-        d_yc = dm.get(x, y) - d_xc
-        d_zc = dm.get(x, z) - d_xc
-        dm._dm[c] = dict()
-        dm.set(x, c, d_xc)
-        dm.set(y, c, d_yc)
-        dm.set(z, c, d_zc)
-        return t
+        fp_tree = fastphylo.bionj(TaxaDistanceView(dm, taxa))
+        return tree_from_fastphylo(fp_tree, dm)
 
 
 ################################################################################
