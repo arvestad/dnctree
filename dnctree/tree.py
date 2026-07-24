@@ -59,7 +59,19 @@ class Tree:
                 start_node = vertices[0]
             else:
                 start_node = self.start
-            s = _tree_to_string_helper(self.adjacencies, start_node, None)
+            neighbors = self.adjacencies[start_node]
+            if len(neighbors) == 1:
+                # _tree_to_string_helper only emits a vertex's own label when
+                # it's reached as a dead end from elsewhere, never for the
+                # traversal root - so if the root itself is a leaf (degree 1),
+                # its label has to be included explicitly here, or it's
+                # silently dropped from the output.
+                only_neighbor = neighbors[0]
+                rest = _tree_to_string_helper(self.adjacencies, only_neighbor, start_node)
+                label = start_node.decode() if isinstance(start_node, bytes) else start_node
+                s = f'({label},{rest})'
+            else:
+                s = _tree_to_string_helper(self.adjacencies, start_node, None)
             return s + ';'        # Ensure proper Newick format with terminating semi-colon
 
 def _tree_to_string_helper(d, v, source):
