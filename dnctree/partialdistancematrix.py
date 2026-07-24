@@ -137,24 +137,6 @@ class PartialDistanceMatrix:
 
         return v_unique_id
 
-    def create_representative_vertex(self, taxa1, taxa2, other_taxa):
-        '''
-        Perform the central NeighborJoining operation of replacing
-        taxa1 and taxa2 by a new vertex in the distance matrix
-        and update distances to listed vertices accordingly.
-
-        Note that taxa1 and taxa2 are not removed from the PartialDistanceMatrix.
-        '''
-        v_new = self.create_unique_vertex_id()
-        self._dm[v_new] = dict()
-
-        d_12 = self.get(taxa1, taxa2)
-        n = len(other_taxa)
-        for w in other_taxa:
-            d = 0.5 * (self.get(taxa1, w) + self.get(taxa2, w) - d_12)
-            self.set(v_new, w, d)
-        return v_new
-
     def _compute_distance(self, t1, t2):
         '''
         Return the estimated distance between the sequences of the two taxa.
