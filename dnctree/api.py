@@ -10,7 +10,7 @@ from dnctree.simple_algorithm import dnc_tree_simple
 from dnctree.dnctree_k import dnc_tree_k
 
 
-dna_models = ["HKY", "JC"]
+dna_models = ["HKY", "JC", "K2P"]  # Placeholder names: modelmatcher has no DNA rate matrices yet.
 
 
 def divide_n_conquer_tree(

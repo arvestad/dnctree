@@ -12,13 +12,11 @@ from dnctree import divide_n_conquer_tree
 from dnctree.algtesting import run_alg_testing
 from dnctree.version import __version__ as dnctree_version
 from dnctree.msa import MSA
+from dnctree.api import dna_models
 
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
 aa_default_model = aa_models[0]
-
-dna_models =['JC', 'K2P']
-dna_default_model = dna_models[0]
 
 def cmd_line_args():
     ap = argparse.ArgumentParser(description='Divide-and-conquer phylogenetic distance-based tree inference.')

@@ -1,13 +1,9 @@
-#from Bio.Alphabet import ProteinAlphabet, AlphabetEncoder, Gapped
 from Bio.Align import MultipleSeqAlignment
 from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
 import alv.alignment
-import itertools as it
-import logging
 import numpy as np
-import sys
 
 import dnctree.exceptions as dnc
 
