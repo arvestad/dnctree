@@ -9,7 +9,7 @@ import traceback
 from alv.exceptions import AlvPossibleFormatError, AlvEmptyAlignment
 from alv.io import guess_format, read_alignment
 from dnctree.pahmm_adaptor import pahmm_available
-from dnctree import divide_n_conquer_tree, choose_distance_function
+from dnctree import divide_n_conquer_tree
 from dnctree.algtesting import run_alg_testing
 from dnctree.version import __version__ as dnctree_version
 
@@ -24,11 +24,11 @@ else:
 
 aa_models = ['WAG', 'LG', 'VT', 'JTT', 'Dayhoff', 'cpREV']
 aa_default_model = aa_models[0]
-pahmm_aa_models = ['WAG', 'LG', 'JTT']
+pahmm_aa_models = ['WAG', 'LG', 'JTT'] # PAHMM connection will likely be deleted
 
 dna_models =['JC', 'K2P']
 dna_default_model = dna_models[0]
-pahmm_dna_models = ['GTR', 'HKY85']
+pahmm_dna_models = ['GTR', 'HKY85'] # PAHMM connection will likely be deleted
 
 def cmd_line_args():
     ap = argparse.ArgumentParser(description='Divide-and-conquer phylogenetic distance-based tree inference.')

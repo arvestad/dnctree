@@ -5,8 +5,48 @@ import random
 import sys
 
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree import testing_divide_n_conquer
+from dnctree.simple_algorithm import dnc_tree_simple
+from dnctree.dnctree_k import dnc_tree_k
 from tree_matching_distance import distance as matching_distance
+
+
+def testing_divide_n_conquer(
+        model,
+        algorithm='core-tree',
+        max_n_attempts=100,
+        max_clade_size=0.5,
+        base_case_size=100
+):
+    """
+    The purpose with this function is to be able to test the algorithm and
+    see how sensitive it is to errors in the distance estimation.
+
+    Input and parameters:
+
+    model_tree:   A tree defining the distances.
+    epsilon:      Decides the error added to distances.
+
+    Other parameters are the same as for "divide_n_conquer".
+    """
+
+    if algorithm == 'core-tree':
+        t = dnc_tree_k(
+            model,
+            model.taxa,
+            base_case_size,
+            base_case_size
+        )
+    elif algorithm == 'simple':
+        t = dnc_tree_simple(
+            model,
+            model.taxa,
+            max_n_attempts,
+            max_clade_size,
+            base_case_size,
+        )
+    else:
+        sys.exit(f'Programming error: algorithm {algorithm} is not implemented.')
+    return t
 
 
 def run_alg_testing(args):

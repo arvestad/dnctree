@@ -137,7 +137,6 @@ class PartialDistanceMatrix:
                 self.set(v_unique_id, t, d)
                 # print(f'\tt: {t}, d(new_vertex, {t}) = {d:.4} \t 0.5*d({other1}, {t})={self.get(other1, t):.3} + d({other2}, {t})={self.get(other2, t):.3} - d({other1}, {other2})={d_12:.3}')
 
-
         return v_unique_id
 
     def create_representative_vertex(self, taxa1, taxa2, other_taxa):
