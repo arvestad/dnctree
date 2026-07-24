@@ -9,12 +9,12 @@ maintainers = [
 ]
 description = "Distance-based phylogeny inference using a randomised divide-and-conquer method"
 readme = "README.md"
-license = {text = "GNU General Public License v3 (GPLv3)"}
+license = "GPL-3.0-or-later"
+requires-python = ">=3.10"
 classifiers = [
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        "Operating System :: OS Independent",
-        "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dynamic = ["version"]
 
@@ -23,12 +23,18 @@ dependencies = [
     "modelmatcher>=1.1.3",
     "biopython>=1.81",
     "ete3>=3.1.1",
-    "tree_matching_distance"
+    "tree_matching_distance>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
 ]
 
 
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=77", "setuptools-scm>=8"]
 build-backend = "setuptools.build_meta"
 
 
@@ -43,6 +49,17 @@ homepage = "https://github.com/arvestad/dnctree"
 [tool.setuptools]
 packages = ["dnctree"]
 
+[tool.setuptools_scm]
+version_file = "dnctree/_version.py"
 
-[tool.setuptools.dynamic]
-version = {attr = "dnctree.version.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
