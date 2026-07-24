@@ -13,6 +13,15 @@ from dnctree.dnctree_k import dnc_tree_k
 
 dna_models = ["hamming", "jc", "k2p", "tn93"]  # fastphylo's DNA/RNA distance models.
 
+# Protein models fastphylo implements natively (ported from modelmatcher, but
+# not a complete copy - e.g. mtArt/MtMAM/MtZoa/FLU and several other
+# mitochondrial models aren't there). Anything outside this set falls back to
+# dnctree's own modelmatcher + scipy ML estimation.
+FASTPHYLO_PROTEIN_MODELS = {
+    "BLOSUM62", "DCMUT", "Dayhoff", "HIVb", "HIVw", "JTT", "JTT_DCMut",
+    "LG", "MtREV", "PMB", "RtREV", "VT", "WAG", "cpREV",
+}
+
 
 def divide_n_conquer_tree(
     seq_data,
@@ -99,8 +108,11 @@ def choose_distance_function(seqtype, model_name=None):
                 )
             else:
                 chosen_model = model_name
-        model = RateMatrix.instantiate(chosen_model)
-        distance_fcn = lambda N: ml_distance_estimate(model, N)  # XXX Correct call?
+        if chosen_model in FASTPHYLO_PROTEIN_MODELS:
+            distance_fcn = _fastphylo_sequence_distance(chosen_model, fastphylo.SeqType.Protein)
+        else:
+            model = RateMatrix.instantiate(chosen_model)
+            distance_fcn = lambda N: ml_distance_estimate(model, N)  # XXX Correct call?
         return distance_fcn, chosen_model
     elif seqtype in ("dna", "rna"):
         chosen_model = model_name or "k2p"  # fastphylo's own default
@@ -109,16 +121,16 @@ def choose_distance_function(seqtype, model_name=None):
                 f"'{chosen_model}' is not a known DNA/RNA model. Choose one of: {dna_models}."
             )
         fp_seq_type = fastphylo.SeqType.RNA if seqtype == "rna" else fastphylo.SeqType.DNA
-        distance_fcn = _fastphylo_nucleotide_distance(chosen_model, fp_seq_type)
+        distance_fcn = _fastphylo_sequence_distance(chosen_model, fp_seq_type)
         return distance_fcn, chosen_model
     else:
         raise dncexc.UnknownModel(f"Not a valid sequence type: {seqtype}.")
 
 
-def _fastphylo_nucleotide_distance(model, fp_seq_type):
+def _fastphylo_sequence_distance(model, fp_seq_type):
     """
-    Build a distance function for DNA/RNA that delegates to fastphylo, computed
-    from the two taxa's actual sequences rather than a precomputed count matrix.
+    Build a distance function that delegates to fastphylo, computed from the
+    two taxa's actual sequences rather than a precomputed count matrix.
     """
     def compute(rec1, rec2):
         aln = fastphylo.Alignment([
