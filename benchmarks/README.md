@@ -32,3 +32,30 @@ python benchmarks/compare.py benchmarks/results/baseline.json benchmarks/results
 against the pre-fastphylo implementation. Any future migration should be
 compared against it: correctness (RF / tree-matching-distance) should stay
 the same or improve, and time should decrease.
+
+## Distance-estimator accuracy (`distance_accuracy.py`)
+
+`bench.py` answers "given an already-noisy distance matrix, how well does
+the tree-reconstruction algorithm work?" — it never touches sequence-based
+distance *estimation* at all (`TestingPartialDistanceMatrix` reads true
+distances straight from a model tree and adds synthetic noise). A different
+question — "how accurately does a distance estimator recover the true
+evolutionary distance from real sequence data?" — needs its own tool:
+
+```shell
+python benchmarks/distance_accuracy.py
+python benchmarks/distance_accuracy.py -o benchmarks/results/distance_accuracy.json
+```
+
+For each protein model (JTT, WAG, LG), sequence pairs are simulated via
+`modelmatcher`'s own `sample_count_matrix` at a known true distance, and
+both dnctree's `ml_distance_estimate` and `fastphylo.distance_matrix` are
+run on the identical simulated data. For DNA (JC, K2P, TN93) — where
+dnctree has no independent estimator of its own, since it already delegates
+100% to fastphylo — the standard closed-form analytical formulas
+(Jukes-Cantor 1969, Kimura 1980, Tamura-Nei 1993) serve as an independent
+reference instead, computed from sequences simulated via each model's own
+rate matrix (matrix-exponential substitution). The DNA simulator and
+formulas self-validate (recover a known distance at large `n_sites`) before
+being trusted to judge fastphylo — the script aborts rather than reporting
+if that check fails.
