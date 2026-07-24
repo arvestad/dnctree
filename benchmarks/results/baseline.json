@@ -1,0 +1,235 @@
+{
+  "label": "dnctree",
+  "dnctree_version": "0.1.dev153+gfd74f812c.d20260724",
+  "git_commit": "3e87338",
+  "python_version": "3.10.13",
+  "epsilon": 0.05,
+  "error_distribution": "uniform",
+  "results": [
+    {
+      "scenario": "caterpillar-20",
+      "n_taxa": 20,
+      "algorithm": "nj",
+      "base_case_size": 20,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.0006834418163634837,
+        "min": 0.0006565840449184179,
+        "max": 0.0007254579686559737,
+        "stdev": 2.531642898752722e-05
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-20",
+      "n_taxa": 20,
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.0005980081972666085,
+        "min": 0.000541541026905179,
+        "max": 0.0006292500183917582,
+        "stdev": 3.789007667390642e-05
+      },
+      "rf_normalized": {
+        "mean": 0.011764705882352941,
+        "min": 0.0,
+        "max": 0.058823529411764705,
+        "stdev": 0.026306682088232818
+      },
+      "tree_matching_distance": {
+        "mean": 1.4,
+        "min": 0,
+        "max": 7,
+        "stdev": 3.1304951684997055
+      }
+    },
+    {
+      "scenario": "caterpillar-20",
+      "n_taxa": 20,
+      "algorithm": "simple",
+      "base_case_size": 10,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.0009628831874579191,
+        "min": 0.0008567500044591725,
+        "max": 0.0010660839616321027,
+        "stdev": 8.504967010295514e-05
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-50",
+      "n_taxa": 50,
+      "algorithm": "nj",
+      "base_case_size": 50,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.011142750189173966,
+        "min": 0.008453042013570666,
+        "max": 0.021063916967250407,
+        "stdev": 0.0055495784350183585
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-50",
+      "n_taxa": 50,
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.0017318831873126329,
+        "min": 0.001626292010769248,
+        "max": 0.0018585419747978449,
+        "stdev": 9.086186059976613e-05
+      },
+      "rf_normalized": {
+        "mean": 0.17872340425531916,
+        "min": 0.10638297872340426,
+        "max": 0.2127659574468085,
+        "stdev": 0.04412008798580366
+      },
+      "tree_matching_distance": {
+        "mean": 121.4,
+        "min": 86,
+        "max": 150,
+        "stdev": 23.765521244020714
+      }
+    },
+    {
+      "scenario": "caterpillar-50",
+      "n_taxa": 50,
+      "algorithm": "simple",
+      "base_case_size": 10,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.005715949996374548,
+        "min": 0.0040894169942475855,
+        "max": 0.009082540986128151,
+        "stdev": 0.002020856932016108
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-100",
+      "n_taxa": 100,
+      "algorithm": "nj",
+      "base_case_size": 100,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.0646131168003194,
+        "min": 0.06332566699711606,
+        "max": 0.06591662502614781,
+        "stdev": 0.0009933072542378607
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-100",
+      "n_taxa": 100,
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.004140483192168176,
+        "min": 0.003949665988329798,
+        "max": 0.00437879201490432,
+        "stdev": 0.00017336208331494371
+      },
+      "rf_normalized": {
+        "mean": 0.18144329896907216,
+        "min": 0.13402061855670103,
+        "max": 0.20618556701030927,
+        "stdev": 0.02970074286781017
+      },
+      "tree_matching_distance": {
+        "mean": 537.2,
+        "min": 410,
+        "max": 599,
+        "stdev": 77.66401998351617
+      }
+    },
+    {
+      "scenario": "caterpillar-100",
+      "n_taxa": 100,
+      "algorithm": "simple",
+      "base_case_size": 10,
+      "n_reps": 5,
+      "time_seconds": {
+        "mean": 0.019522541598416866,
+        "min": 0.007403208001051098,
+        "max": 0.028708499972708523,
+        "stdev": 0.009560162181602282
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    }
+  ]
+}
