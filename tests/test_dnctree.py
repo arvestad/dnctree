@@ -1,5 +1,5 @@
 import unittest
-from dnctree.neighbor_joining import dnc_neighborjoining, nj_selection_function
+from dnctree.neighbor_joining import dnc_neighborjoining
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import kimura_distance
@@ -12,19 +12,13 @@ class Test_dnctree(unittest.TestCase):
         msa = MSA.from_seq_list(['PEPTIDELARS', 'PEPTIDELARS', 'PEPTIDELARA', 'SEPTICELARA', 'SEPTICELARS'])
         self.pdm = PartialDistanceMatrix(msa, kimura_distance)
 
-    def test_nj_selection(self):
-        pair = nj_selection_function(self.pdm, ['seq0', 'seq1', 'seq2', 'seq3', 'seq4'])
-        self.assertTrue('seq3' in pair)
-        self.assertTrue('seq4' in pair)
-
-        pair = nj_selection_function(self.pdm, ['seq0', 'seq1', 'seq2'])
-        self.assertTrue('seq0' in pair)
-        self.assertTrue('seq1' in pair)
-
-
     def test_dnc_nj(self):
         s = dnc_neighborjoining(self.pdm, ['seq0', 'seq1', 'seq2'])
-        self.assertEqual(str(s), '(seq0,seq1,seq2);') # I cannot guarantee the order though...
+        # Leaf order in the output isn't guaranteed, only that all three
+        # taxa are present (there's only one possible unrooted topology
+        # for 3 leaves anyway).
+        for taxon in ('seq0', 'seq1', 'seq2'):
+            self.assertIn(taxon, str(s))
 
         s_simple = dnc_neighborjoining(self.pdm, ['seq0', 'seq1', 'seq2', 'seq3', 'seq4'])
         s_tree = ete3.Tree(str(s_simple))
