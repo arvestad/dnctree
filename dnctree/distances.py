@@ -26,7 +26,7 @@ def kimura_distance(N):
 
 
 def log_likelihood_at_t(model, N, t):
-    '''
+    r'''
     Return the loglikelihood of observing a pair of sequence that yield a
     replacement count matrix N.
 

@@ -65,7 +65,7 @@ class PartialDistanceMatrix:
         '''
 
         def q_diff(a, b, c, d):
-            '''
+            r'''
             Return the perceived length _m_ of the mid branch separating ab with cd.
 
             a     c
