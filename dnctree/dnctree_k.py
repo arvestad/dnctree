@@ -87,6 +87,59 @@ def get_center_vertex(tree):
 
 
 ################################################################################
+# Find the centroid vertex of a tree
+#
+# A centroid minimizes the size (vertex count) of the largest branch hanging
+# off of it.  This# guarantees that there are at most half the leaves in any
+# subtree off of the centroid.
+
+
+def get_subtree_size(tree: Tree, sizes, edge):
+    """
+    edge=(x, y) is the directed edge from vertex x to y.
+    Returns the number of vertices in the branch hanging off of x in the
+    direction of y (i.e. y's subtree, once x is removed) - including y
+    itself.
+
+    Memoized the same way as get_longest_path_length_to_leaf.
+    """
+    if edge in sizes:
+        return sizes[edge]
+    x, y = edge
+    #        n[0]
+    #       /
+    # x -- y
+    #       \
+    #        n[1]
+    n = [i for i in tree.adjacencies[y] if i != x]
+    if not n:  # y is a leaf.
+        sizes[edge] = 1  # Just y itself.
+    else:
+        sizes[edge] = 1 + sum(get_subtree_size(tree, sizes, (y, ni)) for ni in n)
+    return sizes[edge]
+
+
+def get_centroid_vertex(tree):
+    """
+    Returns the centroid vertex of the tree: the vertex whose removal
+    leaves branches that are as balanced (in vertex count) as possible,
+    i.e. the largest branch is as small as possible. Drop-in replacement
+    for get_center_vertex - same signature, same "one pivot vertex" role.
+    """
+    sizes = {}  # Memoization dictionary.
+    centroid_candidate = None
+    smallest_largest_branch_so_far = len(tree.adjacencies)  # Will always be beaten.
+    for v, neighbors in tree.adjacencies.items():
+        largest_branch = max(
+            get_subtree_size(tree, sizes, (v, n)) for n in neighbors
+        )
+        if largest_branch < smallest_largest_branch_so_far:
+            smallest_largest_branch_so_far = largest_branch
+            centroid_candidate = v
+    return centroid_candidate
+
+
+################################################################################
 ## Clades and path weights from center vertex to leaves
 ################################################################################
 
@@ -162,8 +215,10 @@ def dnc_tree_k(dm, taxa, base_case_size=5, core_size=5):
         non_core_taxa = set(taxa) - set(core_taxa)
         core_tree = dnc_neighborjoining_with_weights(dm, core_taxa)
 
-        # Determine the center vertex and partition the core taxa into three clades.
-        center_vertex = get_center_vertex(core_tree)
+        # Determine the pivot vertex and partition the core taxa into three clades.
+        # Balancing vertex counts (centroid) rather than path length (center)
+        # gives more evenly sized subproblems for the recursion below.
+        center_vertex = get_centroid_vertex(core_tree)
         (
             clade_to_core_taxa,  # Maps 0, 1, and 2 to list of taxa, respectively.
             taxon_to_clade,  # Maps each taxon to the clade it is in, e.g., "T1" -> 0.
