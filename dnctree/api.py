@@ -7,7 +7,7 @@ import dnctree.exceptions as dncexc
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import ml_distance_estimate
-from dnctree.simple_algorithm import dnc_tree_simple
+from dnctree.simple_algorithm import dnc_tree_simple, dnc_tree_simple_centroid
 from dnctree.dnctree_k import dnc_tree_k
 
 
@@ -30,7 +30,7 @@ def divide_n_conquer_tree(
     max_clade_size=0.5,
     base_case_size=100,
     first_triple=None,
-    simple_alg=False
+    algorithm='core-tree'
 ):
     """
     Input: An object with sequence data for the input alignment,
@@ -42,7 +42,10 @@ def divide_n_conquer_tree(
     max_clade_size: The fraction of the taxa that are required before deciding we are happy
                     with a triple. We require that the largest subproblem (clade) has at most this fraction of taxa.
     base_case_size: For clades with at most this many taxa, we just run NJ.
-    simple_alg:      Use the algorithm which randomly chooses three taxa to guide setup of three subproblems.
+    algorithm:      'core-tree' (default), 'simple' (randomly chooses three taxa to guide setup
+                    of three subproblems, joined on a centroid vertex with no distances of its
+                    own - see dnc_tree_simple_centroid), or 'simple_old' (the same idea, but
+                    joined on a vertex whose distances are estimated - see dnc_tree_simple).
     """
     assert base_case_size >= 3  # This is truly a minimum
     assert max_clade_size >= 0.5  # Pointless to try smaller values
@@ -59,7 +62,15 @@ def divide_n_conquer_tree(
 
     dm = PartialDistanceMatrix(seq_data, distance_fcn)  # We will gradually add distances to this "matrix"
 
-    if simple_alg:
+    if algorithm == 'simple':
+        t = dnc_tree_simple_centroid(dm,
+                            seq_data.taxa(),
+                            max_n_attempts, # Can be removed?
+                            max_clade_size, # Can be removed?
+                            base_case_size,
+                            first_triple,
+                            )
+    elif algorithm == 'simple_old':
         t = dnc_tree_simple(dm,
                             seq_data.taxa(),
                             max_n_attempts, # Can be removed?

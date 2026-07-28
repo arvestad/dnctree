@@ -3,16 +3,10 @@ import itertools
 import logging
 import random
 import sys
-import warnings
 
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree.simple_algorithm import dnc_tree_simple
+from dnctree.simple_algorithm import dnc_tree_simple, dnc_tree_simple_centroid
 from dnctree.dnctree_k import dnc_tree_k
-
-# tree_matching_distance's own __init__.py uses the deprecated pkg_resources
-# API for its version lookup; harmless, but noisy every run.
-warnings.filterwarnings("ignore", message=r"pkg_resources is deprecated.*", category=UserWarning)
-from tree_matching_distance import distance as matching_distance
 
 
 def testing_divide_n_conquer(
@@ -42,6 +36,14 @@ def testing_divide_n_conquer(
             base_case_size
         )
     elif algorithm == 'simple':
+        t = dnc_tree_simple_centroid(
+            model,
+            model.taxa,
+            max_n_attempts,
+            max_clade_size,
+            base_case_size,
+        )
+    elif algorithm == 'simple_old':
         t = dnc_tree_simple(
             model,
             model.taxa,
@@ -57,8 +59,11 @@ def testing_divide_n_conquer(
 def run_alg_testing(args):
     dt = TestingPartialDistanceMatrix(args.infile, args.alg_testing, args.alg_testing_err_distribution)
     rf_dnc_list = []
-    tm_dnc_list = []
+    anchor_dnc_list = []
+    max_reuse_list = []
+    max_generation_list = []
     for base_case_size in map(int, args.alg_testing_base_case_sizes.split(',')):
+        dt.reset_anchor_counter()
         t_dnc = testing_divide_n_conquer(dt,
                                          algorithm=args.alg_testing_algorithm,
                                          max_n_attempts=args.max_n_attempts,
@@ -69,14 +74,22 @@ def run_alg_testing(args):
         rf_dnc, rf_dnc_max, *x = dnc_estimated_tree.robinson_foulds(dt._dt, unrooted_trees=True)
         rf_dnc_list.append(f'{rf_dnc/rf_dnc_max:.5}')
 
-        tm_dnc = matching_distance(dnc_estimated_tree, dt._dt)
-        tm_dnc_list.append(f'{tm_dnc}')
+        anchor_dnc_list.append(f'{dt.n_anchor_is_virtual()}')
+        max_reuse_list.append(f'{dt.max_anchor_reuse()}')
+        max_generation_list.append(f'{dt.max_generation()}')
 
     rf_string = '# Base case sizes: ' + args.alg_testing_base_case_sizes + '\n# RF distance\nRF '
     rf_string += '  '.join(rf_dnc_list)
 
-    tm_string = '# tree matching distance:\nTM '
-    tm_string += '  '.join(tm_dnc_list)
+    anchor_string = '# number of times a virtual (center) vertex was picked as one of the 3 anchors:\nANCHOR '
+    anchor_string += '  '.join(anchor_dnc_list)
+
+    max_reuse_string = '# largest number of times any single virtual vertex was picked as an anchor:\nMAXREUSE '
+    max_reuse_string += '  '.join(max_reuse_list)
+
+    max_generation_string = ('# longest chain of anchor reuse (vertex built from a vertex built from '
+                              'a vertex...):\nMAXGEN ')
+    max_generation_string += '  '.join(max_generation_list)
 
     # NJ
     if args.alg_testing_nj:
@@ -87,13 +100,16 @@ def run_alg_testing(args):
                                         )
         nj_estimated_tree = ete3.Tree(str(t_nj))
         rf_nj, rf_nj_max, *y = nj_estimated_tree.robinson_foulds(dt._dt, unrooted_trees=True)
-        tm_nj = matching_distance(dt._dt, nj_estimated_tree)
 
         print(f'{rf_string}   {rf_nj/rf_nj_max:5}')
-        print(tm_string + f'  {tm_nj}')
+        print(anchor_string)
+        print(max_reuse_string)
+        print(max_generation_string)
     else:
         print(rf_string)
-        print(tm_string)
+        print(anchor_string)
+        print(max_reuse_string)
+        print(max_generation_string)
 
 
 class TestingPartialDistanceMatrix(PartialDistanceMatrix):
@@ -107,6 +123,10 @@ class TestingPartialDistanceMatrix(PartialDistanceMatrix):
         self.taxa = [taxon.name for taxon in self._dt]
         self.n_taxa = len(self.taxa)
         self._internal_vertex_counter = 0
+        self._virtual_vertices = set()
+        self._n_anchor_is_virtual = 0
+        self._anchor_reuse_count = dict()
+        self._generation = dict()
         self._last_progress = 0
         self._n_distances_computed = 0
 
@@ -116,25 +136,62 @@ class TestingPartialDistanceMatrix(PartialDistanceMatrix):
             self._true_dm[s] = dict()
             self._seen[s] = dict()
 
+        # get_distance() only does an O(n) tree-wide search when given a
+        # *name*; given actual node objects it just walks ancestors, so
+        # caching the name->node lookup here (instead of "self._dt&s" per
+        # pair) turns this loop from O(n^3) into O(n^2 * tree depth).
+        name_to_node = {leaf.name: leaf for leaf in self._dt}
         for s, t in itertools.combinations(self.taxa, 2):
-            s_node = self._dt&s
-            d = s_node.get_distance(t)
+            s_node = name_to_node[s]
+            t_node = name_to_node[t]
+            d = s_node.get_distance(t_node)
             self._true_dm[t][s] = d
             self._true_dm[s][t] = d
-            if error_distribution == 'uniform':
-                delta = random.uniform(- self._epsilon, self._epsilon)
-            elif error_distribution == 'normal':
-                delta = random.gauss(0, self._epsilon)
-            else:
-                raise Exception(f'Bad programming: distribution "{args.error_model}" not implemented')
+            self._seen[s][t] = False
+            self._seen[t][s] = False
 
-            d += delta          # Perturb
+        self.resample_noise(error_distribution)
+
+
+    def _draw_delta(self, error_distribution):
+        if error_distribution == 'uniform':
+            return random.uniform(- self._epsilon, self._epsilon)
+        elif error_distribution == 'normal':
+            return random.gauss(0, self._epsilon)
+        elif error_distribution == 'evil':
+            return random.choice([- 0.99*self._epsilon, 0.99*self._epsilon])
+        else:
+            raise Exception(f'Bad programming: distribution "{error_distribution}" not implemented')
+
+
+    def resample_noise(self, error_distribution):
+        '''
+        Re-draw the random error term for every pair from the cached true
+        distances (self._true_dm, computed once in __init__), and reset all
+        recursion-derived state (virtual vertex ids, anchor-reuse counters).
+        Lets the same instance be reused across repeated trials without
+        redoing the O(n^2 * tree depth) true-distance computation, which
+        dominates cost and doesn't depend on the noise draw.
+        '''
+        self._internal_vertex_counter = 0
+        self._virtual_vertices = set()
+        self._n_anchor_is_virtual = 0
+        self._anchor_reuse_count = dict()
+        self._generation = dict()
+        self._n_distances_computed = 0
+        self._last_progress = 0
+
+        self._dm = dict()
+        for s in self.taxa:
+            self._dm[s] = dict()
+            self._dm[s][s] = 0.0
+
+        for s, t in itertools.combinations(self.taxa, 2):
+            d = self._true_dm[s][t] + self._draw_delta(error_distribution)
             if d < 0:
                 d = 0
             self._dm[s][t] = d
             self._dm[t][s] = d
-            self._seen[s][t] = False
-            self._seen[t][s] = False
 
 
     def get(self, t1, t2):

@@ -42,9 +42,14 @@ def cmd_line_args():
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. "
                          "Be specific if the file is not recognized automatically. Default: %(default)s")
-    ap.add_argument('-s', '--simple', action='store_true',
-                    help='Use the simple algorithm, which uses three taxa and sorts the rest into three'
-                    'subproblems. Worse quality than the standard algorithm.')
+    simple_group = ap.add_mutually_exclusive_group()
+    simple_group.add_argument('-s', '--simple', action='store_true',
+                    help='Use the simple algorithm, which uses three taxa and sorts the rest into three '
+                    'subproblems, joined on a centroid vertex with no distances of its own. Worse quality '
+                    'than the standard algorithm.')
+    simple_group.add_argument('-so', '--simple-old', action='store_true',
+                    help='Like --simple, but joined on a vertex whose distances to the rest of the taxa '
+                    'are estimated - the original version of the simple algorithm.')
     ap.add_argument('-j', '--json-output', action='store_true',
                     help='Output in JSON format, as an object with fields. Key object is "tree".')
 
@@ -83,16 +88,17 @@ def cmd_line_args():
         algtesting.add_argument('--alg-testing', type=float,
                                 help='Enables algorithm evaluation. The infile is read as model tree, '
                                      'defining distance, and the parameter to this option is the randomised error.')
-        algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'core-tree'],
+        algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'simple_old', 'core-tree'],
                                 default='core-tree',
                                 help='Decide which algorithm to test')
         algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
                                 help='Write a comma-separated list of base-case sizes')
         algtesting.add_argument('--alg-testing-nj', action='store_true',
                                 help='Compare with NJ. This option is dependent on --alg-testing.')
-        algtesting.add_argument('--alg-testing-err-distribution', default='uniform', choices=['uniform', 'normal'],
-                                help='Decide wether to use U[-eps, eps] or N(0, eps) for the error term.'
-                                     'I.e., uniform or normal distribution around zero, and eps is the parameter to --alg-testing.'
+        algtesting.add_argument('--alg-testing-err-distribution', default='uniform', choices=['uniform', 'normal', 'evil'],
+                                help='Decide wether to use U[-eps, eps], N(0, eps), or {-0.99*eps, 0.99*eps} for the error term.'
+                                     'I.e., uniform or normal distribution around zero, and eps is the parameter to --alg-testing,'
+                                     'or "evil", meaning the we are always close to worst error.'
                                      'Note that distances are not allowed to be zero, so the error term is conditioned.')
 
     args = ap.parse_args()
@@ -200,11 +206,18 @@ def main():
         n = len(seq_data.taxa())
         logging.info(f'Input has {n} taxa.')
 
+        if args.simple:
+            algorithm = 'simple'
+        elif args.simple_old:
+            algorithm = 'simple_old'
+        else:
+            algorithm = 'core-tree'
+
         t, aux_info = divide_n_conquer_tree(seq_data, model_name=model_name,
                                   max_n_attempts=args.max_n_attempts,
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
-                                  simple_alg=args.simple)
+                                  algorithm=algorithm)
 
         logging.info('Done.')
         stop_time = time.perf_counter()

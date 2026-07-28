@@ -29,6 +29,23 @@ class Tree:
         d[w].append(v)
 
 
+    def replace_leaf(self, leaf, new_vertex):
+        '''
+        Replace a leaf (degree-1 vertex) with new_vertex: remove leaf, and
+        rewire its one neighbor to connect to new_vertex instead. Adds
+        new_vertex to this tree if not already present (so several calls,
+        one per source tree, can build up its neighbor list before merging).
+        '''
+        neighbors = self.adjacencies[leaf]
+        assert len(neighbors) == 1, f"{leaf} is not a leaf (degree {len(neighbors)})"
+        p = neighbors[0]
+        del self.adjacencies[leaf]
+        self.adjacencies[p] = [new_vertex if n == leaf else n for n in self.adjacencies[p]]
+        if new_vertex not in self.adjacencies:
+            self.adjacencies[new_vertex] = list()
+        self.adjacencies[new_vertex].append(p)
+
+
     def set_start_node(self, v):
         '''
         Recomment this node as a starting point for recursion

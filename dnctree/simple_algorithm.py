@@ -33,9 +33,21 @@ def dnc_tree_simple(
             t = first_triple
             c = clade_sort_taxa(dm, taxa, t[0], t[1], t[2])
         else:
-            t, c = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size)
+            sampled = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size)
+            if sampled is None:
+                # Fewer than 3 real (non-virtual) taxa remain to anchor a
+                # split on - a virtual central vertex from an earlier split
+                # is never eligible (see sample_three_taxa), so rather than
+                # force one to be reused as an anchor, stop dividing here.
+                logging.debug(
+                    f"Fewer than 3 real taxa among {len(taxa)}; falling back to NJ."
+                )
+                return dnc_neighborjoining(dm, taxa)
+            t, c = sampled
         # t[i] are 3 taxa ids
         # c[i] are three lists of taxa representing what we think should be become a clade (c[i] together with t[i]).
+        for anchor in t:
+            dm.record_anchor(anchor)
 
         # Add an inner vertex v that connects c1, c2, and c3.
         v = dm.create_central_vertex(t, c)
@@ -55,10 +67,98 @@ def dnc_tree_simple(
         return t_connected
 
 
+def compute_centroid_distances(dm, x, y, z):
+    """
+    Given three taxa x, y, z, return d(c,x), d(c,y), d(c,z): the distances
+    from each to the centroid c of the 3-taxon star tree they define, via
+    the exact 3-point formula on their three real pairwise distances (e.g.
+    d(c,x) = 0.5*(d(x,y) + d(x,z) - d(y,z))). c itself is never assigned an
+    id or a distance - these three numbers are only ever used to rank x, y,
+    z by proximity to it.
+    """
+    d_xy = dm.get(x, y)
+    d_xz = dm.get(x, z)
+    d_yz = dm.get(y, z)
+    return {
+        x: 0.5 * (d_xy + d_xz - d_yz),
+        y: 0.5 * (d_xy + d_yz - d_xz),
+        z: 0.5 * (d_xz + d_yz - d_xy),
+    }
+
+
+def dnc_tree_simple_centroid(
+    dm,
+    taxa,
+    max_n_attempts,
+    max_clade_size,
+    base_case_size,
+    first_triple=None
+):
+    """
+    Variant of dnc_tree_simple that never estimates a distance to the
+    centroid c connecting the three subproblems - only ever real,
+    directly-estimated distances are used anywhere.
+
+    For each of the three subproblems, the anchor of the OTHER two taxa
+    closest to c (see compute_centroid_distances) is added as a
+    representative. If the partition is correct, c lies on the path from
+    that representative to every taxon in the subproblem's own clade, so
+    once the subproblem is independently reconstructed, the representative
+    ends up a leaf whose single neighbor is exactly where c attaches to
+    that subtree. A fresh, purely topological vertex (never assigned any
+    distance) replaces the representative at that point in each of the
+    three reconstructed subtrees, and the three are merged there - so
+    every real taxon, including the representatives, ends up appearing
+    exactly once, in its own native clade's subtree.
+    """
+    if len(taxa) <= base_case_size:
+        logging.debug(f"Full NJ on {len(taxa)} taxa:")
+        logging.debug(_taxa_string_helper(taxa, 2))
+        t = dnc_neighborjoining(dm, taxa)
+        return t
+    else:
+        if first_triple is not None:
+            t = first_triple
+            c = clade_sort_taxa(dm, taxa, t[0], t[1], t[2])
+        else:
+            sampled = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size)
+            if sampled is None:
+                logging.debug(
+                    f"Fewer than 3 real taxa among {len(taxa)}; falling back to NJ."
+                )
+                return dnc_neighborjoining(dm, taxa)
+            t, c = sampled
+
+        d_c = compute_centroid_distances(dm, t[0], t[1], t[2])
+        taxa_string = _taxa_string_helper([t[0], t[1], t[2]], 0)
+        logging.debug(f"Recursing on subproblems induced by {taxa_string}")
+
+        c_id = dm.create_unique_vertex_id()  # purely topological - no distances ever set
+        subtrees = [None, None, None]
+        for i in range(3):
+            other_two = [t[j] for j in range(3) if j != i]
+            representative = min(other_two, key=lambda w: d_c[w])
+            c[i].append(representative)
+            subtree = dnc_tree_simple_centroid(
+                dm, c[i], max_n_attempts, max_clade_size, base_case_size, None
+            )
+            subtree.replace_leaf(representative, c_id)
+            subtrees[i] = subtree
+            dm.log_progress()
+        t_connected = connect_the_trees(subtrees, c_id)
+        return t_connected
+
+
 def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size):
     """
     Sample three taxa and see if they split the set of taxa not too unevenly. Repeat until the largest
     clade (out of three) is small enough or we have used our max number of attempts.
+
+    Anchors are drawn only from the real (non-virtual) taxa: a synthesized
+    central vertex from an earlier split has distances that are themselves
+    estimates, and using one as an anchor compounds that estimation error
+    into whatever vertex the resulting split creates. Returns None if fewer
+    than 3 real taxa remain - the caller should fall back to NJ in that case.
 
     Parameters:
       dm              A PartialDistanceMatrix
@@ -67,6 +167,10 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size):
       max_clade_size  Try not to accept a taxa sample that defines one of the clades as larger than this,
                       as a fraction of the taxa. (It is a float.)
     """
+    real_taxa = [x for x in taxa if not dm.is_virtual(x)]
+    if len(real_taxa) < 3:
+        return None
+
     N = (
         len(taxa) * max_clade_size
     )  # The max clade size is given as a fraction. N is the actual number of taxa to allow for a subproblem.
@@ -75,7 +179,7 @@ def sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size):
         taxa
     )  # Initialize with worst possible subproblem size
     for i in range(max_n_attempts):
-        v1, v2, v3 = random.sample(taxa, 3)  # Three taxa strings
+        v1, v2, v3 = random.sample(real_taxa, 3)  # Three taxa strings, never virtual
         taxa_string = _taxa_string_helper([v1, v2, v3], 0)
         logging.debug(f"Attempt: {taxa_string}.")
         c1, c2, c3 = clade_sort_taxa(

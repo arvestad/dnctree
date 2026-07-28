@@ -29,6 +29,10 @@ class PartialDistanceMatrix:
 
         self._dm = dict()
         self._internal_vertex_counter = 0
+        self._virtual_vertices = set()
+        self._n_anchor_is_virtual = 0
+        self._anchor_reuse_count = dict()
+        self._generation = dict()
         self._last_progress = 0
         for t in self.taxa:
             self._dm[t] = dict()
@@ -93,7 +97,59 @@ class PartialDistanceMatrix:
         '''
         v_unique_id = f'#{self._internal_vertex_counter}'
         self._internal_vertex_counter += 1
+        self._virtual_vertices.add(v_unique_id)
         return v_unique_id
+
+
+    def is_virtual(self, taxon):
+        '''
+        True if taxon is a synthesized central vertex (from create_central_vertex),
+        rather than one of the original input taxa.
+        '''
+        return taxon in self._virtual_vertices
+
+
+    def record_anchor(self, taxon):
+        '''
+        Diagnostic hook: call with each of the three anchor taxa used to define a
+        split, so we can measure how often a synthesized central vertex from an
+        earlier split gets reused as a defining anchor in a later one.
+        '''
+        if self.is_virtual(taxon):
+            self._n_anchor_is_virtual += 1
+            self._anchor_reuse_count[taxon] = self._anchor_reuse_count.get(taxon, 0) + 1
+
+
+    def n_anchor_is_virtual(self):
+        return self._n_anchor_is_virtual
+
+
+    def max_anchor_reuse(self):
+        '''
+        The largest number of times any single virtual vertex was picked as
+        an anchor (as opposed to n_anchor_is_virtual, which sums this over
+        all virtual vertices).
+        '''
+        return max(self._anchor_reuse_count.values(), default=0)
+
+
+    def max_generation(self):
+        '''
+        The longest chain of anchor reuse seen so far: a virtual vertex built
+        from three real taxa has generation 1; a virtual vertex built using
+        another virtual vertex as one of its three anchors has generation
+        1 + that vertex's generation. This is the depth of compounding
+        estimation error through repeated anchor reuse, as opposed to
+        n_anchor_is_virtual/max_anchor_reuse, which count reuse events but
+        not how they chain together.
+        '''
+        return max(self._generation.values(), default=0)
+
+
+    def reset_anchor_counter(self):
+        self._n_anchor_is_virtual = 0
+        self._anchor_reuse_count = dict()
+        self._generation = dict()
 
 
     def create_central_vertex(self, three_taxa, three_clades):
@@ -106,6 +162,9 @@ class PartialDistanceMatrix:
         three_clades A 3-tuple of the taxa for which we are building clades.
         '''
         v_unique_id = self.create_unique_vertex_id()
+        self._generation[v_unique_id] = 1 + max(
+            (self._generation.get(t, 0) for t in three_taxa), default=0
+        )
         self._dm[v_unique_id] = dict()
         for i in range(3):
             # Estimate distances from v to the selected taxa
