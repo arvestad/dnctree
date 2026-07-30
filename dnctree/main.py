@@ -50,6 +50,9 @@ def cmd_line_args():
     simple_group.add_argument('-so', '--simple-old', action='store_true',
                     help='Like --simple, but joined on a vertex whose distances to the rest of the taxa '
                     'are estimated - the original version of the simple algorithm.')
+    simple_group.add_argument('-M', '--multi', action='store_true',
+                    help='Use dnc_tree_multi, a variant of the standard (core-tree) algorithm with a '
+                    'choice of non-core-taxa partition method - see --partition, --core-tree-size.')
     ap.add_argument('-j', '--json-output', action='store_true',
                     help='Output in JSON format, as an object with fields. Key object is "tree".')
 
@@ -70,8 +73,19 @@ def cmd_line_args():
 
     group = ap.add_argument_group('Expert options', 'You need to understand the dnctree '
                                                     'algorithm to tweak these options in a meaningful way.')
-    group.add_argument('--base-case-size', default=100, type=int, metavar='int',
+    group.add_argument('-b', '--base-case-size', default=100, type=int, metavar='int',
                        help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
+    group.add_argument('-c', '--core-tree-size', type=int, default=None, metavar='int',
+                       help='Size of the randomly sampled core taxa set, used by the core-tree and '
+                            'multi algorithms. Defaults to --base-case-size if not given.')
+    group.add_argument('-p', '--partition', choices=['quartet', 'tree'], default='quartet',
+                       help="Non-core-taxa partition method for the multi algorithm (see --multi): "
+                            "'quartet' (default) uses a 4-point quartet test against one representative "
+                            "taxon per clade; 'tree' builds a fresh NJ tree per non-core taxon (much more "
+                            "expensive). No effect without --multi.")
+    group.add_argument('--base-case-method', choices=['nj', 'bionj'], default='bionj',
+                       help="Which method the multi algorithm's terminal base case uses (see --multi). "
+                            "Default: %(default)s. No effect without --multi.")
     group.add_argument('--max-n-attempts', type=int, default=1, metavar='int',
                        help='Make at most this many attempts. Default: %(default)s')
     group.add_argument('--max-clade-size', type=float, default=0.5, metavar='float',
@@ -88,7 +102,7 @@ def cmd_line_args():
         algtesting.add_argument('--alg-testing', type=float,
                                 help='Enables algorithm evaluation. The infile is read as model tree, '
                                      'defining distance, and the parameter to this option is the randomised error.')
-        algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'simple_old', 'core-tree'],
+        algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'simple_old', 'core-tree', 'multi'],
                                 default='core-tree',
                                 help='Decide which algorithm to test')
         algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
@@ -124,6 +138,9 @@ def check_args(args):
 
         if args.base_case_size < 3:
             sys.exit('Error: --base-case-size must be at least 3.')
+
+        if args.core_tree_size is not None and args.core_tree_size < 3:
+            sys.exit('Error: --core-tree-size must be at least 3.')
 
         if args.max_n_attempts < 1:
             logging.warning('--max-n-attempts cannot be smaller than 1. '
@@ -210,6 +227,8 @@ def main():
             algorithm = 'simple'
         elif args.simple_old:
             algorithm = 'simple_old'
+        elif args.multi:
+            algorithm = 'multi'
         else:
             algorithm = 'core-tree'
 
@@ -217,6 +236,9 @@ def main():
                                   max_n_attempts=args.max_n_attempts,
                                   max_clade_size=args.max_clade_size,
                                   base_case_size=args.base_case_size,
+                                  core_size=args.core_tree_size,
+                                  base_case_method=args.base_case_method,
+                                  partition_method=args.partition,
                                   algorithm=algorithm)
 
         logging.info('Done.')
@@ -244,6 +266,7 @@ def make_json_string(t, aux_info, args):
     info['infile'] = args.infile
     info['aligned'] = True
     info['base-case-size'] = args.base_case_size
+    info['core-tree-size'] = args.core_tree_size if args.core_tree_size is not None else args.base_case_size
 
     for key, val in aux_info.items():
         info[key] = val

@@ -7,6 +7,7 @@ import sys
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.simple_algorithm import dnc_tree_simple, dnc_tree_simple_centroid
 from dnctree.dnctree_k import dnc_tree_k
+from dnctree.dnctree_multi import dnc_tree_multi
 
 
 def testing_divide_n_conquer(
@@ -14,7 +15,10 @@ def testing_divide_n_conquer(
         algorithm='core-tree',
         max_n_attempts=100,
         max_clade_size=0.5,
-        base_case_size=100
+        base_case_size=100,
+        core_size=None,
+        base_case_method='bionj',
+        partition_method='quartet'
 ):
     """
     The purpose with this function is to be able to test the algorithm and
@@ -27,13 +31,23 @@ def testing_divide_n_conquer(
 
     Other parameters are the same as for "divide_n_conquer".
     """
+    resolved_core_size = core_size if core_size is not None else base_case_size
 
     if algorithm == 'core-tree':
         t = dnc_tree_k(
             model,
             model.taxa,
             base_case_size,
-            base_case_size
+            resolved_core_size
+        )
+    elif algorithm == 'multi':
+        t = dnc_tree_multi(
+            model,
+            model.taxa,
+            base_case_size=base_case_size,
+            core_size=resolved_core_size,
+            base_case_method=base_case_method,
+            partition_method=partition_method,
         )
     elif algorithm == 'simple':
         t = dnc_tree_simple_centroid(
@@ -68,7 +82,10 @@ def run_alg_testing(args):
                                          algorithm=args.alg_testing_algorithm,
                                          max_n_attempts=args.max_n_attempts,
                                          max_clade_size=args.max_clade_size,
-                                         base_case_size=base_case_size)
+                                         base_case_size=base_case_size,
+                                         core_size=args.core_tree_size,
+                                         base_case_method=args.base_case_method,
+                                         partition_method=args.partition)
         dnc_estimated_tree = ete3.Tree(str(t_dnc))
 
         rf_dnc, rf_dnc_max, *x = dnc_estimated_tree.robinson_foulds(dt._dt, unrooted_trees=True)

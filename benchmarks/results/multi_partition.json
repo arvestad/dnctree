@@ -1,0 +1,514 @@
+{
+  "label": "dnctree",
+  "dnctree_version": "0.1.dev165+gfac0cebb2.d20260724",
+  "git_commit": "3a6eef8",
+  "python_version": "3.12.13",
+  "epsilon": 0.05,
+  "error_distribution": "uniform",
+  "results": [
+    {
+      "scenario": "caterpillar-20",
+      "n_taxa": 20,
+      "config": "core-tree",
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": null,
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0004899971963216861,
+        "min": 0.00034383300226181746,
+        "max": 0.000645708991214633,
+        "stdev": 5.7229028494196684e-05
+      },
+      "rf_normalized": {
+        "mean": 0.03529411764705882,
+        "min": 0.0,
+        "max": 0.11764705882352941,
+        "stdev": 0.03655620389799208
+      },
+      "tree_matching_distance": {
+        "mean": 4.733333333333333,
+        "min": 0,
+        "max": 15,
+        "stdev": 4.8061263585878224
+      }
+    },
+    {
+      "scenario": "caterpillar-20",
+      "n_taxa": 20,
+      "config": "multi-quartet",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "quartet",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.000455397196734945,
+        "min": 0.00042629207018762827,
+        "max": 0.0005882920231670141,
+        "stdev": 3.756888750607371e-05
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-20",
+      "n_taxa": 20,
+      "config": "multi-tree",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "tree",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0014685875309320788,
+        "min": 0.0012744159903377295,
+        "max": 0.0018906249897554517,
+        "stdev": 0.00014744665796746434
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-50",
+      "n_taxa": 50,
+      "config": "core-tree",
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": null,
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0022120292764157058,
+        "min": 0.001422791974619031,
+        "max": 0.019666458014398813,
+        "stdev": 0.0032996614815890258
+      },
+      "rf_normalized": {
+        "mean": 0.1177304964539007,
+        "min": 0.0425531914893617,
+        "max": 0.2553191489361702,
+        "stdev": 0.05380666519996765
+      },
+      "tree_matching_distance": {
+        "mean": 85.6,
+        "min": 27,
+        "max": 174,
+        "stdev": 37.49721828763228
+      }
+    },
+    {
+      "scenario": "caterpillar-50",
+      "n_taxa": 50,
+      "config": "multi-quartet",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "quartet",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0015354332824548086,
+        "min": 0.0013458749745041132,
+        "max": 0.0018128749215975404,
+        "stdev": 0.00010456037910170387
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-50",
+      "n_taxa": 50,
+      "config": "multi-tree",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "tree",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.008633314003236591,
+        "min": 0.007815208984538913,
+        "max": 0.00994825002271682,
+        "stdev": 0.0004546741433931415
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-100",
+      "n_taxa": 100,
+      "config": "core-tree",
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": null,
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0035933279160720605,
+        "min": 0.0031276249792426825,
+        "max": 0.003803499974310398,
+        "stdev": 0.000161543008589213
+      },
+      "rf_normalized": {
+        "mean": 0.1563573883161512,
+        "min": 0.07216494845360824,
+        "max": 0.28865979381443296,
+        "stdev": 0.04790427139710865
+      },
+      "tree_matching_distance": {
+        "mean": 431.6666666666667,
+        "min": 191,
+        "max": 721,
+        "stdev": 135.79379228443582
+      }
+    },
+    {
+      "scenario": "caterpillar-100",
+      "n_taxa": 100,
+      "config": "multi-quartet",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "quartet",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0032986860916328926,
+        "min": 0.0030659169424325228,
+        "max": 0.0036256249295547605,
+        "stdev": 0.00013528148679319227
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "caterpillar-100",
+      "n_taxa": 100,
+      "config": "multi-tree",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "tree",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0257266415671135,
+        "min": 0.023712750058621168,
+        "max": 0.02826941607054323,
+        "stdev": 0.0011764215390929682
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "even_steven-24",
+      "n_taxa": 24,
+      "config": "core-tree",
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": null,
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0004288457993728419,
+        "min": 0.0003601249773055315,
+        "max": 0.0006826670141890645,
+        "stdev": 8.58586884652935e-05
+      },
+      "rf_normalized": {
+        "mean": 0.0015873015873015873,
+        "min": 0.0,
+        "max": 0.047619047619047616,
+        "stdev": 0.008694008849288351
+      },
+      "tree_matching_distance": {
+        "mean": 0.4,
+        "min": 0,
+        "max": 12,
+        "stdev": 2.1908902300206643
+      }
+    },
+    {
+      "scenario": "even_steven-24",
+      "n_taxa": 24,
+      "config": "multi-quartet",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "quartet",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0003886443329975009,
+        "min": 0.00033545796759426594,
+        "max": 0.0005952080246061087,
+        "stdev": 6.906470743211697e-05
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "even_steven-24",
+      "n_taxa": 24,
+      "config": "multi-tree",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "tree",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0016343735895740488,
+        "min": 0.0013922079233452678,
+        "max": 0.002358500030823052,
+        "stdev": 0.00033716589987993695
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "even_steven-48",
+      "n_taxa": 48,
+      "config": "core-tree",
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": null,
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0011803790732907752,
+        "min": 0.0010357920546084642,
+        "max": 0.0012882500886917114,
+        "stdev": 5.3615810399862824e-05
+      },
+      "rf_normalized": {
+        "mean": 0.015555555555555555,
+        "min": 0.0,
+        "max": 0.24444444444444444,
+        "stdev": 0.04488289478586805
+      },
+      "tree_matching_distance": {
+        "mean": 6.433333333333334,
+        "min": 0,
+        "max": 61,
+        "stdev": 12.648247345760607
+      }
+    },
+    {
+      "scenario": "even_steven-48",
+      "n_taxa": 48,
+      "config": "multi-quartet",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "quartet",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0010448179789818823,
+        "min": 0.0009013749659061432,
+        "max": 0.00125962495803833,
+        "stdev": 6.352841206830139e-05
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "even_steven-48",
+      "n_taxa": 48,
+      "config": "multi-tree",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "tree",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.006048399935631703,
+        "min": 0.005497290985658765,
+        "max": 0.007096374989487231,
+        "stdev": 0.0004909139262622113
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "even_steven-96",
+      "n_taxa": 96,
+      "config": "core-tree",
+      "algorithm": "core-tree",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": null,
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0027404736688671012,
+        "min": 0.002427542000077665,
+        "max": 0.0031322920694947243,
+        "stdev": 0.00013789714910917376
+      },
+      "rf_normalized": {
+        "mean": 0.007168458781362008,
+        "min": 0.0,
+        "max": 0.021505376344086023,
+        "stdev": 0.0076468709915995655
+      },
+      "tree_matching_distance": {
+        "mean": 13.333333333333334,
+        "min": 0,
+        "max": 52,
+        "stdev": 15.87305966058547
+      }
+    },
+    {
+      "scenario": "even_steven-96",
+      "n_taxa": 96,
+      "config": "multi-quartet",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "quartet",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.0023711986024864016,
+        "min": 0.0021336249774321914,
+        "max": 0.0029263750184327364,
+        "stdev": 0.00016072736680242927
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    },
+    {
+      "scenario": "even_steven-96",
+      "n_taxa": 96,
+      "config": "multi-tree",
+      "algorithm": "multi",
+      "base_case_size": 10,
+      "core_size": 10,
+      "partition_method": "tree",
+      "n_reps": 30,
+      "time_seconds": {
+        "mean": 0.01766534708828355,
+        "min": 0.016107832896523178,
+        "max": 0.023226749966852367,
+        "stdev": 0.001619034197216444
+      },
+      "rf_normalized": {
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "stdev": 0.0
+      },
+      "tree_matching_distance": {
+        "mean": 0,
+        "min": 0,
+        "max": 0,
+        "stdev": 0.0
+      }
+    }
+  ]
+}

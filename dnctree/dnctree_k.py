@@ -193,6 +193,41 @@ def get_clades_and_dists_to_center(tree: Tree, dm, center_vertex):
     return clade_to_taxa, taxon_to_clade, dist_to_center
 
 
+def estimate_non_core_dist_to_center(dm, non_core_taxa, taxon_to_clade,
+                                      clade_to_core_taxa, dist_to_center, center_vertex):
+    """
+    Estimate, for each non-core taxon v, its distance to center_vertex, and
+    record it in dm. For each core taxon w in one of the two clades v is NOT
+    in, v's path to w must pass through center_vertex, so d(v, center) can be
+    estimated as d(v, w) - d(w, center); averaging this over every such w
+    (i.e. every core taxon in the other two clades) reduces noise from any
+    single pairwise distance. Also sets d(center_vertex, center_vertex) = 0.
+
+    Shared between dnc_tree_k and dnc_tree_multi: this step doesn't depend on
+    how non-core taxa were assigned to clades, only on the final assignment.
+    """
+    # C[i] = \sum_[w \in core_taxa_in_clade_i] d(w, center_vertex)
+    # for i \in {0, 1, 2}.
+    C = {i: sum(dist_to_center[w] for w in clade_to_core_taxa[i]) for i in range(3)}
+
+    for v in non_core_taxa:
+        # Indices a and b are the two clades that v is not in.
+        a, b = {0: (1, 2), 1: (0, 2), 2: (0, 1)}[taxon_to_clade[v]]
+        n_taxa_in_a_and_b = len(clade_to_core_taxa[a]) + len(clade_to_core_taxa[b])
+        # Estimate distance from v to center.
+        sum_dist_estimates = (
+            sum(dm.get(v, w) for w in clade_to_core_taxa[a])
+            + sum(dm.get(v, w) for w in clade_to_core_taxa[b])
+            - C[a]
+            - C[b]
+        )
+        # The distance is the average of the estimates.
+        dm.set(v, center_vertex, sum_dist_estimates / n_taxa_in_a_and_b)
+
+    # Finally set the distance between the center vertex and iteself.
+    dm.set(center_vertex, center_vertex, 0)
+
+
 ################################################################################
 ## The new DNC tree k algorithm
 ################################################################################
@@ -248,27 +283,9 @@ def dnc_tree_k(dm, taxa, base_case_size=5, core_size=5):
             clade_to_non_core_taxa[taxon_to_clade[v]].append(v)
 
         # Estimate distance between each non-core taxon and the center vertex.
-
-        # C[i] = \sum_[w \in core_taxa_in_clade_i] d(w, center_vertex)
-        # for i \in {0, 1, 2}.
-        C = {i: sum(dist_to_center[w] for w in clade_to_core_taxa[i]) for i in range(3)}
-
-        for v in non_core_taxa:
-            # Indices a and b are the two clades that v is not in.
-            a, b = {0: (1, 2), 1: (0, 2), 2: (0, 1)}[taxon_to_clade[v]]
-            n_taxa_in_a_and_b = len(clade_to_core_taxa[a]) + len(clade_to_core_taxa[b])
-            # Estimate distance from v to center.
-            sum_dist_estimates = (
-                sum(dm.get(v, w) for w in clade_to_core_taxa[a])
-                + sum(dm.get(v, w) for w in clade_to_core_taxa[b])
-                - C[a]
-                - C[b]
-            )
-            # The distance is the average of the estimates.
-            dm.set(v, center_vertex, sum_dist_estimates / n_taxa_in_a_and_b)
-
-        # Finally set the distance between the center vertex and iteself.
-        dm.set(center_vertex, center_vertex, 0)
+        estimate_non_core_dist_to_center(
+            dm, non_core_taxa, taxon_to_clade, clade_to_core_taxa, dist_to_center, center_vertex
+        )
 
         # Recurse and get three subtrees, each sharing the center vertex.
 
