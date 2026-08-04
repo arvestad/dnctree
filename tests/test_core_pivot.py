@@ -2,7 +2,7 @@ import unittest
 
 import ete3
 
-from dnctree.dnctree_k import dnc_neighborjoining_with_weights, dnc_tree_k
+from dnctree.core_pivot import dnc_neighborjoining_with_weights
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import kimura_distance
@@ -53,19 +53,6 @@ class TestDncNeighborjoiningWithWeights(unittest.TestCase):
         # whatever vertex joins them first should be non-negative and small.
         d = self.pdm.get('seq0', 'seq1')
         self.assertTrue(d >= 0)
-
-    def test_dnc_tree_k_end_to_end(self):
-        # With only 5 taxa and core_size=3, dnc_tree_k's random core sampling
-        # can legitimately produce different (still valid) topologies
-        # depending on which taxa get picked as the core - not enough
-        # redundancy at this tiny scale to expect exact reconstruction. Check
-        # what actually matters: every taxon present, and a parseable tree.
-        t = dnc_tree_k(self.pdm, self.taxa, base_case_size=3, core_size=3)
-        s = str(t)
-        for taxon in self.taxa:
-            self.assertIn(taxon, s)
-        result_tree = ete3.Tree(s)
-        self.assertEqual(set(result_tree.get_leaf_names()), set(self.taxa))
 
 
 if __name__ == '__main__':

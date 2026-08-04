@@ -36,7 +36,7 @@ class PartialDistanceMatrix:
         self._last_progress = 0
         for t in self.taxa:
             self._dm[t] = dict()
-            self._dm[t][t] = 0.0 # Used in the dnctree_k algo
+            self._dm[t][t] = 0.0 # Used by the divide-and-conquer algorithms
         self._n_distances_computed = 0
 
 

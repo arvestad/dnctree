@@ -15,12 +15,15 @@ for some examples!
 
 ## Algorithms
 
-There are currently two algorithm versions implemented in dnctree. 
+There are currently two algorithm versions implemented in dnctree.
 
-- The default algorithm, 'core tree', seems to be as accurate as Neighbor-Joining in our experiments
-  so far, but scales much better than Neighbor-Joining. We have submitted a paper on this algorithm.
-- The 'simple' algorithms (see option `--simple`) is much faster, but has much worse accuracy than
-  the core tree algorithm. The simple algorithm is described in a
+- The default algorithm, 'multi', samples a "core" taxa set, builds a tree on it, and uses
+  that tree's centroid to partition the remaining (non-core) taxa into three subproblems -
+  see `--core-tree-size`, `--partition`, and `--base-case-method` for its tuning knobs. It
+  seems to be as accurate as Neighbor-Joining in our experiments so far, but scales much
+  better than Neighbor-Joining.
+- The 'simple' algorithm (see option `--simple`) is much faster, but has much worse accuracy
+  than the default algorithm. The simple algorithm is described in a
   [biorXiv](https://doi.org/10.1101/2023.10.11.561902) preprint.
 
 Both algorithms use Divide-and-Conquer. Problem instances with fewer sequences than
@@ -68,6 +71,7 @@ $ dnctree --json-output --base-case-size 10 testdata/s83_L500.phylip
 
 # Credits
 
-* Amy Lee Jalsenius developed and implemented the "core tree" algorithm which is now the default.
+* Amy Lee Jalsenius developed and implemented the original "core tree" algorithm, whose
+  core-taxa-sampling idea the current default ('multi') algorithm builds on.
 * Mazen Mardini added PaHMM code (see `https://github.com/marbogusz/paHMM-Tree`), enabling experiments.
   This integration has since been removed from dnctree.

@@ -59,7 +59,7 @@ def run():
         msa = load_msa(filename)
         n_taxa = len(msa.taxa())
 
-        for label in ("core-tree", "simple"):
+        for label in ("multi", "simple"):
             timing = time_it(lambda: divide_n_conquer_tree(msa, algorithm=label))
             results.append({
                 "file": filename,

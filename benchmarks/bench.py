@@ -37,13 +37,13 @@ SCENARIOS = [
     ("caterpillar-100", 100),
 ]
 
-# (label, algorithm, base_case_size) -- "nj" reuses the core-tree code path
-# with base_case_size == n_taxa, which forces the pure weighted-NJ base case
-# with no divide-and-conquer recursion (same trick main.py's
+# (label, algorithm, base_case_size) -- "nj" reuses the multi code path
+# with base_case_size == n_taxa, which forces the pure weighted-NJ/BioNJ
+# base case with no divide-and-conquer recursion (same trick main.py's
 # --alg-testing-nj uses).
 ALGORITHMS = [
-    ("nj", "core-tree", None),       # base_case_size filled in with n_taxa
-    ("core-tree", "core-tree", 10),
+    ("nj", "multi", None),       # base_case_size filled in with n_taxa
+    ("multi", "multi", 10),
     ("simple", "simple", 10),
 ]
 

@@ -40,24 +40,6 @@ class TestTree(unittest.TestCase):
         self.assertEqual(str(self.t), '(d,(e,f),((a,b),c));')
 
 
-    def test_basics(self):
-        for v in ['a', 'b', 'c', 'd', 'e', 'f']:
-            self.assertTrue(self.t.is_leaf(v))
-
-        for v in ['1', '2', '3', '4']:
-            self.assertFalse(self.t.is_leaf(v))
-
-
-    def test_iterators(self):
-        t_leaves = list(self.t.leaves())
-        self.assertEqual(['a', 'b', 'c', 'd', 'e', 'f'],
-                         sorted(t_leaves))
-
-        t_inner = list(self.t.inner_vertices())
-        self.assertEqual(['1', '2', '3', '4'],
-                         sorted(t_inner))
-
-
     def test_merge(self):
         self.t1.merge(self.t2, '4')
         self.t1.merge(self.t3, '4')

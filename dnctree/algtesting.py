@@ -5,20 +5,19 @@ import random
 import sys
 
 from dnctree.partialdistancematrix import PartialDistanceMatrix
-from dnctree.simple_algorithm import dnc_tree_simple, dnc_tree_simple_centroid
-from dnctree.dnctree_k import dnc_tree_k
+from dnctree.simple_algorithm import dnc_tree_simple_centroid
 from dnctree.dnctree_multi import dnc_tree_multi
 
 
 def testing_divide_n_conquer(
         model,
-        algorithm='core-tree',
+        algorithm='multi',
         max_n_attempts=100,
         max_clade_size=0.5,
         base_case_size=100,
         core_size=None,
         base_case_method='bionj',
-        partition_method='quartet'
+        partition_method='tree'
 ):
     """
     The purpose with this function is to be able to test the algorithm and
@@ -33,14 +32,7 @@ def testing_divide_n_conquer(
     """
     resolved_core_size = core_size if core_size is not None else base_case_size
 
-    if algorithm == 'core-tree':
-        t = dnc_tree_k(
-            model,
-            model.taxa,
-            base_case_size,
-            resolved_core_size
-        )
-    elif algorithm == 'multi':
+    if algorithm == 'multi':
         t = dnc_tree_multi(
             model,
             model.taxa,
@@ -51,14 +43,6 @@ def testing_divide_n_conquer(
         )
     elif algorithm == 'simple':
         t = dnc_tree_simple_centroid(
-            model,
-            model.taxa,
-            max_n_attempts,
-            max_clade_size,
-            base_case_size,
-        )
-    elif algorithm == 'simple_old':
-        t = dnc_tree_simple(
             model,
             model.taxa,
             max_n_attempts,

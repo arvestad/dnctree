@@ -42,17 +42,10 @@ def cmd_line_args():
                     choices=['guess', 'fasta', 'clustal', 'nexus', 'phylip', 'stockholm'],
                     help="Specify what sequence type to assume. "
                          "Be specific if the file is not recognized automatically. Default: %(default)s")
-    simple_group = ap.add_mutually_exclusive_group()
-    simple_group.add_argument('-s', '--simple', action='store_true',
+    ap.add_argument('-s', '--simple', action='store_true',
                     help='Use the simple algorithm, which uses three taxa and sorts the rest into three '
-                    'subproblems, joined on a centroid vertex with no distances of its own. Worse quality '
-                    'than the standard algorithm.')
-    simple_group.add_argument('-so', '--simple-old', action='store_true',
-                    help='Like --simple, but joined on a vertex whose distances to the rest of the taxa '
-                    'are estimated - the original version of the simple algorithm.')
-    simple_group.add_argument('-M', '--multi', action='store_true',
-                    help='Use dnc_tree_multi, a variant of the standard (core-tree) algorithm with a '
-                    'choice of non-core-taxa partition method - see --partition, --core-tree-size.')
+                    'subproblems, joined on a centroid vertex with no distances of its own. Faster, but '
+                    'worse quality than the default algorithm.')
     ap.add_argument('-j', '--json-output', action='store_true',
                     help='Output in JSON format, as an object with fields. Key object is "tree".')
 
@@ -76,16 +69,16 @@ def cmd_line_args():
     group.add_argument('-b', '--base-case-size', default=100, type=int, metavar='int',
                        help='When a subproblem has at most this many taxa, full NJ is run. Default: %(default)s')
     group.add_argument('-c', '--core-tree-size', type=int, default=None, metavar='int',
-                       help='Size of the randomly sampled core taxa set, used by the core-tree and '
-                            'multi algorithms. Defaults to --base-case-size if not given.')
-    group.add_argument('-p', '--partition', choices=['quartet', 'tree'], default='quartet',
-                       help="Non-core-taxa partition method for the multi algorithm (see --multi): "
-                            "'quartet' (default) uses a 4-point quartet test against one representative "
-                            "taxon per clade; 'tree' builds a fresh NJ tree per non-core taxon (much more "
-                            "expensive). No effect without --multi.")
+                       help='Size of the randomly sampled core taxa set, used by the multi algorithm '
+                            '(the default). Defaults to --base-case-size if not given.')
+    group.add_argument('-p', '--partition', choices=['quartet', 'tree'], default='tree',
+                       help="Non-core-taxa partition method used by the multi algorithm (the default): "
+                            "'tree' (default) builds a fresh NJ tree per non-core taxon (much more "
+                            "expensive); 'quartet' uses a 4-point quartet test against one representative "
+                            "taxon per clade instead. No effect with --simple.")
     group.add_argument('--base-case-method', choices=['nj', 'bionj'], default='bionj',
-                       help="Which method the multi algorithm's terminal base case uses (see --multi). "
-                            "Default: %(default)s. No effect without --multi.")
+                       help="Which method the multi algorithm's (the default) terminal base case uses. "
+                            "Default: %(default)s. No effect with --simple.")
     group.add_argument('--max-n-attempts', type=int, default=1, metavar='int',
                        help='Make at most this many attempts. Default: %(default)s')
     group.add_argument('--max-clade-size', type=float, default=0.5, metavar='float',
@@ -102,8 +95,8 @@ def cmd_line_args():
         algtesting.add_argument('--alg-testing', type=float,
                                 help='Enables algorithm evaluation. The infile is read as model tree, '
                                      'defining distance, and the parameter to this option is the randomised error.')
-        algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'simple_old', 'core-tree', 'multi'],
-                                default='core-tree',
+        algtesting.add_argument('--alg-testing-algorithm', choices=['simple', 'multi'],
+                                default='multi',
                                 help='Decide which algorithm to test')
         algtesting.add_argument('--alg-testing-base-case-sizes', default='5,10',
                                 help='Write a comma-separated list of base-case sizes')
@@ -223,14 +216,7 @@ def main():
         n = len(seq_data.taxa())
         logging.info(f'Input has {n} taxa.')
 
-        if args.simple:
-            algorithm = 'simple'
-        elif args.simple_old:
-            algorithm = 'simple_old'
-        elif args.multi:
-            algorithm = 'multi'
-        else:
-            algorithm = 'core-tree'
+        algorithm = 'simple' if args.simple else 'multi'
 
         t, aux_info = divide_n_conquer_tree(seq_data, model_name=model_name,
                                   max_n_attempts=args.max_n_attempts,

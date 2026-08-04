@@ -2,7 +2,7 @@ import random
 from collections import deque
 
 from dnctree.neighbor_joining import dnc_neighborjoining
-from dnctree.dnctree_k import (
+from dnctree.core_pivot import (
     dnc_neighborjoining_with_weights,
     get_centroid_vertex,
     get_clades_and_dists_to_center,
@@ -11,13 +11,15 @@ from dnctree.simple_algorithm import compute_centroid_distances
 
 
 ################################################################################
-## dnc_tree_multi: a variant of dnc_tree_k with a choice of non-core-taxa
-## partition method (quartet testing vs tree testing), and a run-time choice
-## of NJ vs BioNJ for the terminal base case.
+## dnc_tree_multi: dnctree's default algorithm. Samples a core taxa set,
+## finds T_core's centroid, and partitions core taxa into three clades - a
+## choice of non-core-taxa partition method (quartet testing vs tree
+## testing), and a run-time choice of NJ vs BioNJ for the terminal base
+## case.
 ##
-## Unlike dnc_tree_k, the three subproblems are never joined on a synthetic
-## vertex with estimated distances. Instead, T_core's centroid is used only
-## to pick, per clade, the core taxon closest to it (a purely topological/
+## The three subproblems are never joined on a synthetic vertex with
+## estimated distances. Instead, T_core's centroid is used only to pick,
+## per clade, the core taxon closest to it (a purely topological/
 ## branch-length-based SELECTION, not a distance estimate) - those three
 ## representatives then play the role of the three anchors in
 ## dnc_tree_simple_centroid, and the same distance-free merge mechanism is
@@ -137,21 +139,22 @@ def _assign_non_core_taxa_tree(dm, core_taxa, non_core_taxa, taxon_to_clade):
 
 
 def dnc_tree_multi(dm, taxa, base_case_size=5, core_size=5,
-                    base_case_method='bionj', partition_method='quartet'):
+                    base_case_method='bionj', partition_method='tree'):
     """
-    A variant of dnc_tree_k with the same overall divide-and-conquer
-    structure (sample core taxa, find T_core's centroid, partition core taxa
-    into three clades) but differing in two ways:
+    dnctree's default algorithm. Overall divide-and-conquer structure:
+    sample core taxa, find T_core's centroid, partition core taxa into
+    three clades. Two configurable choices:
 
-    1. A choice of how non-core taxa get assigned to a clade:
-       - 'quartet' (default): a 4-point quartet test against one
-         representative taxon per clade (see _assign_non_core_taxa_quartet).
-         Cheap - reuses PartialDistanceMatrix.select_clade and the
-         already-computed dist_to_center, no new tree construction.
-       - 'tree': builds a fresh NJ tree per non-core taxon and inherits the
-         dominant clade of whichever side of its attachment point is less
-         diverse across clades (see _assign_non_core_taxa_tree). Much more
-         expensive - one NJ tree per non-core taxon.
+    1. How non-core taxa get assigned to a clade:
+       - 'tree' (default): builds a fresh NJ tree per non-core taxon and
+         inherits the dominant clade of whichever side of its attachment
+         point is less diverse across clades (see
+         _assign_non_core_taxa_tree). Expensive - one NJ tree per non-core
+         taxon.
+       - 'quartet': a 4-point quartet test against one representative taxon
+         per clade (see _assign_non_core_taxa_quartet). Cheap - reuses
+         PartialDistanceMatrix.select_clade and the already-computed
+         dist_to_center, no new tree construction.
 
     2. The three subproblems are joined the way dnc_tree_simple_centroid
        joins its three subproblems: never on a synthetic vertex with

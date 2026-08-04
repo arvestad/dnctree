@@ -4,69 +4,6 @@ import random
 from dnctree.neighbor_joining import dnc_neighborjoining, _taxa_string_helper
 
 
-def dnc_tree_simple(
-    dm,
-    taxa,
-    max_n_attempts,
-    max_clade_size,
-    base_case_size,
-    first_triple=None
-):
-    """
-    The core algorithm
-
-    dm:       A PartialDistanceMatrix instance, to draw distances from. Note that
-              distances are computed on-demand and "cached" with function registered
-              in this object.
-    taxa:     A list of identifiers (part of dm) to infer the tree for
-
-
-    returns:  A Tree object.
-    """
-    if len(taxa) <= base_case_size:
-        logging.debug(f"Full NJ on {len(taxa)} taxa:")
-        logging.debug(_taxa_string_helper(taxa, 2))
-        t = dnc_neighborjoining(dm, taxa)
-        return t
-    else:
-        if first_triple is not None:
-            t = first_triple
-            c = clade_sort_taxa(dm, taxa, t[0], t[1], t[2])
-        else:
-            sampled = sample_three_taxa(dm, taxa, max_n_attempts, max_clade_size)
-            if sampled is None:
-                # Fewer than 3 real (non-virtual) taxa remain to anchor a
-                # split on - a virtual central vertex from an earlier split
-                # is never eligible (see sample_three_taxa), so rather than
-                # force one to be reused as an anchor, stop dividing here.
-                logging.debug(
-                    f"Fewer than 3 real taxa among {len(taxa)}; falling back to NJ."
-                )
-                return dnc_neighborjoining(dm, taxa)
-            t, c = sampled
-        # t[i] are 3 taxa ids
-        # c[i] are three lists of taxa representing what we think should be become a clade (c[i] together with t[i]).
-        for anchor in t:
-            dm.record_anchor(anchor)
-
-        # Add an inner vertex v that connects c1, c2, and c3.
-        v = dm.create_central_vertex(t, c)
-        taxa_string = _taxa_string_helper([t[0], t[1], t[2]], 0)
-        logging.debug(f"Recursing on subproblems induced by {taxa_string}")
-
-        # Recurse on cx+tx+v, for x in {1,2,3}.
-        subtrees = [None, None, None]
-        for i in range(3):
-            c[i].append(v)  # Ensure that the central vertex participates as a representative of the other clades
-            subtrees[i] = dnc_tree_simple(
-                dm, c[i], max_n_attempts, max_clade_size, base_case_size, None
-            )
-
-            dm.log_progress()
-        t_connected = connect_the_trees(subtrees, v)
-        return t_connected
-
-
 def compute_centroid_distances(dm, x, y, z):
     """
     Given three taxa x, y, z, return d(c,x), d(c,y), d(c,z): the distances
@@ -95,9 +32,9 @@ def dnc_tree_simple_centroid(
     first_triple=None
 ):
     """
-    Variant of dnc_tree_simple that never estimates a distance to the
-    centroid c connecting the three subproblems - only ever real,
-    directly-estimated distances are used anywhere.
+    The 'simple' algorithm: never estimates a distance to the centroid c
+    connecting the three subproblems - only ever real, directly-estimated
+    distances are used anywhere.
 
     For each of the three subproblems, the anchor of the OTHER two taxa
     closest to c (see compute_centroid_distances) is added as a

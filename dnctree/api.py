@@ -7,8 +7,7 @@ import dnctree.exceptions as dncexc
 from dnctree.msa import MSA
 from dnctree.partialdistancematrix import PartialDistanceMatrix
 from dnctree.distances import ml_distance_estimate
-from dnctree.simple_algorithm import dnc_tree_simple, dnc_tree_simple_centroid
-from dnctree.dnctree_k import dnc_tree_k
+from dnctree.simple_algorithm import dnc_tree_simple_centroid
 from dnctree.dnctree_multi import dnc_tree_multi
 
 
@@ -31,10 +30,10 @@ def divide_n_conquer_tree(
     max_clade_size=0.5,
     base_case_size=100,
     first_triple=None,
-    algorithm='core-tree',
+    algorithm='multi',
     core_size=None,
     base_case_method='bionj',
-    partition_method='quartet'
+    partition_method='tree'
 ):
     """
     Input: An object with sequence data for the input alignment,
@@ -46,16 +45,14 @@ def divide_n_conquer_tree(
     max_clade_size: The fraction of the taxa that are required before deciding we are happy
                     with a triple. We require that the largest subproblem (clade) has at most this fraction of taxa.
     base_case_size: For clades with at most this many taxa, we just run NJ.
-    algorithm:      'core-tree' (default), 'multi' (a variant of core-tree with a choice of
-                    non-core-taxa partition method - see dnc_tree_multi), 'simple' (randomly
-                    chooses three taxa to guide setup of three subproblems, joined on a centroid
-                    vertex with no distances of its own - see dnc_tree_simple_centroid), or
-                    'simple_old' (the same idea, but joined on a vertex whose distances are
-                    estimated - see dnc_tree_simple).
-    core_size:      Size of the randomly sampled core taxa set, used by 'core-tree' and 'multi'.
-                    Defaults to base_case_size if not given.
+    algorithm:      'multi' (default; samples a core taxa set and a choice of non-core-taxa
+                    partition method - see dnc_tree_multi) or 'simple' (randomly chooses three
+                    taxa to guide setup of three subproblems, joined on a centroid vertex with
+                    no distances of its own - see dnc_tree_simple_centroid).
+    core_size:      Size of the randomly sampled core taxa set, used by 'multi'. Defaults to
+                    base_case_size if not given.
     base_case_method: 'bionj' (default) or 'nj' - which method 'multi''s terminal base case uses.
-    partition_method: 'quartet' (default) or 'tree' - which non-core-taxa assignment method
+    partition_method: 'tree' (default) or 'quartet' - which non-core-taxa assignment method
                     'multi' uses. See dnc_tree_multi.
     """
     assert base_case_size >= 3  # This is truly a minimum
@@ -84,22 +81,10 @@ def divide_n_conquer_tree(
                             base_case_size,
                             first_triple,
                             )
-    elif algorithm == 'simple_old':
-        t = dnc_tree_simple(dm,
-                            seq_data.taxa(),
-                            max_n_attempts, # Can be removed?
-                            max_clade_size, # Can be removed?
-                            base_case_size,
-                            first_triple,
-                            )
     elif algorithm == 'multi':
         t = dnc_tree_multi(
             dm, seq_data.taxa(), base_case_size=base_case_size, core_size=resolved_core_size,
             base_case_method=base_case_method, partition_method=partition_method,
-        )
-    elif algorithm == 'core-tree':  # Use Amy's work
-        t = dnc_tree_k(
-            dm, seq_data.taxa(), base_case_size=base_case_size, core_size=resolved_core_size
         )
     else:
         raise ValueError(f"Unknown algorithm: {algorithm!r}")

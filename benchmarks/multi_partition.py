@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
 Benchmark harness comparing dnc_tree_multi's two non-core-taxa partition
-methods (quartet vs tree) against each other and against the existing
-core-tree (dnc_tree_k) baseline, on both correctness (RF distance against a
-known model tree) and speed - same methodology as bench.py, extended with
-dnc_tree_multi's extra knobs (core_size, partition_method).
+methods (quartet vs tree) against each other, on both correctness (RF
+distance against a known model tree) and speed - same methodology as
+bench.py, extended with dnc_tree_multi's extra knobs (core_size,
+partition_method).
 
 Usage:
     python benchmarks/multi_partition.py
@@ -49,7 +49,6 @@ SCENARIOS = [
 
 # (label, algorithm, base_case_size, core_size, partition_method)
 CONFIGS = [
-    ("core-tree", "core-tree", 10, 10, None),
     ("multi-quartet", "multi", 10, 10, "quartet"),
     ("multi-tree", "multi", 10, 10, "tree"),
 ]
@@ -80,7 +79,7 @@ def run_one(model_tree_newick, algorithm, base_case_size, core_size, partition_m
         algorithm=algorithm,
         base_case_size=base_case_size,
         core_size=core_size,
-        partition_method=partition_method or "quartet",  # ignored unless algorithm == "multi"
+        partition_method=partition_method,
     )
     elapsed = time.perf_counter() - start
 

@@ -18,8 +18,7 @@ class TestDncTreeMulti(unittest.TestCase):
         self.taxa = ['seq0', 'seq1', 'seq2', 'seq3', 'seq4']
 
     def test_dnc_tree_multi_quartet_end_to_end(self):
-        # Same reasoning as test_dnctree_k.py's test_dnc_tree_k_end_to_end:
-        # too few taxa here for exact-reconstruction expectations given
+        # Too few taxa here for exact-reconstruction expectations given
         # random core sampling, so just check every taxon is present and the
         # tree is parseable.
         t = dnc_tree_multi(self.pdm, self.taxa, base_case_size=3, core_size=3,
